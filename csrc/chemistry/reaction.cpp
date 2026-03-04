@@ -2,9 +2,8 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <map>
 #include <memory>
-#include <numeric>
-#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -25,42 +24,43 @@ std::shared_ptr<Molecule> ReactionOutcome::main_product() const {
     return *max_it;
 }
 
-std::unique_ptr<Reaction> Reaction::from_smarts(const std::string &smarts) {
+std::unique_ptr<Reaction> Reaction::from_smarts(const std::string &smarts,
+                                                const std::vector<std::string> &reactant_names) {
     std::shared_ptr<RDKit::ChemicalReaction> rdkit_rxn(RDKit::RxnSmartsToChemicalReaction(smarts));
     if (!rdkit_rxn) {
         throw ReactionError("Failed to parse SMARTS: " + smarts);
     }
-    return std::make_unique<Reaction>(std::move(rdkit_rxn));
+    rdkit_rxn->initReactantMatchers();
+    if (!rdkit_rxn->isInitialized()) {
+        throw ReactionError("RDKit reaction is not initialized after parsing SMARTS: " + smarts);
+    }
+
+    return std::make_unique<Reaction>(std::move(rdkit_rxn), reactant_names);
 }
 
 std::vector<ReactionOutcome>
-Reaction::apply(const std::vector<std::shared_ptr<Molecule>> &reactants, bool ignore_errors,
-                const std::optional<std::vector<size_t>> &reactant_indices) const {
+Reaction::apply(const std::map<std::string, std::shared_ptr<Molecule>> &reactants,
+                bool ignore_errors) const {
+    if (reactants.size() != reactant_names_.size()) {
+        throw ReactionError(
+            "Number of reactants provided does not match number of reactant templates");
+    }
+
     std::vector<ReactionOutcome> outcomes;
 
     std::vector<RDKit::ROMOL_SPTR> rdk_reactants;
     rdk_reactants.resize(reactants.size());
-    if (reactant_indices.has_value()) {
-        for (size_t i = 0; i < reactants.size(); ++i) {
-            auto reactant_index = reactant_indices->at(i);
-            rdk_reactants.at(reactant_index) = reactants.at(i)->rdkit_mol_ptr();
+    for (const auto &[name, mol] : reactants) {
+        if (!reactant_name_to_index_.contains(name)) {
+            throw ReactionError("Unknown reactant name: " + name);
         }
-    } else {
-        for (const auto &m : reactants) {
-            rdk_reactants.push_back(m->rdkit_mol_ptr());
-        }
+        size_t index = reactant_name_to_index_.at(name);
+        rdk_reactants[index] = mol->rdkit_mol_ptr();
     }
 
     auto rdk_outcomes = rdkit_rxn_->runReactants(rdk_reactants);
     for (const auto &rdk_outcome : rdk_outcomes) {
         ReactionOutcome outcome;
-        if (reactant_indices.has_value()) {
-            outcome.reactant_indices = *reactant_indices;
-        } else {
-            outcome.reactant_indices.resize(reactants.size());
-            std::iota(outcome.reactant_indices.begin(), outcome.reactant_indices.end(), 0);
-        }
-
         for (const auto &rdk_prod : rdk_outcome) {
             try {
                 auto prod = Molecule::from_unsanitized_rdkit(rdk_prod);
@@ -79,6 +79,34 @@ Reaction::apply(const std::vector<std::shared_ptr<Molecule>> &reactants, bool ig
     }
 
     return outcomes;
+}
+
+std::vector<ReactionOutcomeWithReactantAssignment>
+Reaction::apply(const std::vector<std::shared_ptr<Molecule>> &reactants, bool ignore_errors) const {
+    if (reactants.size() != reactant_names_.size()) {
+        throw ReactionError(
+            "Number of reactants provided does not match number of reactant templates");
+    }
+
+    std::vector<std::string> name_perm = reactant_names_;
+    std::sort(name_perm.begin(), name_perm.end());
+
+    std::vector<ReactionOutcomeWithReactantAssignment> results;
+    do {
+        std::map<std::string, std::shared_ptr<Molecule>> reactant_map;
+        for (size_t i = 0; i < name_perm.size(); ++i) {
+            reactant_map[name_perm.at(i)] = reactants.at(i);
+        }
+        auto outcomes = apply(reactant_map, ignore_errors);
+        for (auto &outcome : outcomes) {
+            ReactionOutcomeWithReactantAssignment outcome_with_assignment;
+            outcome_with_assignment.products = std::move(outcome.products);
+            outcome_with_assignment.reactant_names = name_perm;
+            results.push_back(std::move(outcome_with_assignment));
+        }
+    } while (std::next_permutation(name_perm.begin(), name_perm.end()));
+
+    return results;
 }
 
 } // namespace prexsyn

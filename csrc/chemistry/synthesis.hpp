@@ -4,6 +4,8 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <utility>
+#include <variant>
 #include <vector>
 
 #include "molecule.hpp"
@@ -16,27 +18,22 @@ public:
     explicit SynthesisError(const std::string &message) : std::runtime_error(message) {}
 };
 
-struct Outcome {
-    std::vector<std::shared_ptr<Molecule>> products;
-    std::vector<size_t> precursor_outcomes;
+class SynthesisNode {
+private:
+    struct Item {
+        std::variant<std::shared_ptr<Molecule>, ReactionOutcomeWithReactantAssignment> m;
+        std::vector<size_t> precursor_indices;
+    };
 
-    bool empty() const { return products.empty(); }
-    size_t num_products() const { return products.size(); }
-    std::shared_ptr<Molecule> main_product() const;
-};
-
-struct Node {
-    std::vector<Outcome> outcomes;
-    std::vector<size_t> precursor_nodes;
-};
-
-class Synthesis {
-    std::vector<Node> nodes_;
-    std::vector<size_t> stack_;
+    std::vector<Item> items_;
+    std::shared_ptr<Reaction> reaction_;
+    std::vector<std::pair<std::shared_ptr<SynthesisNode>, size_t>> precursors_;
 
 public:
-    void add(const std::shared_ptr<Molecule> &);
-    void add(const std::shared_ptr<Reaction> &);
+    SynthesisNode(std::shared_ptr<Molecule> mol) { items_.push_back({mol, {}}); };
+
+    size_t size() const;
+    const Item &at(size_t) const;
 };
 
 } // namespace prexsyn::synthesis
