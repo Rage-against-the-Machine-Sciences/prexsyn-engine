@@ -39,3 +39,12 @@ target_link_libraries(prexsyn_obj PUBLIC ${RDKit_LIBRARIES} OpenMP::OpenMP_CXX)
 
 add_executable(main csrc/main.cpp)
 target_link_libraries(main PRIVATE prexsyn_obj)
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  enable_testing()
+  find_package(GTest REQUIRED)
+  file(GLOB_RECURSE TEST_SOURCES csrc/*_test.cpp)
+  add_executable(tests ${TEST_SOURCES})
+  target_link_libraries(tests PRIVATE prexsyn_obj GTest::GTest GTest::Main)
+  gtest_discover_tests(tests)
+endif()
