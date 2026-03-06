@@ -29,5 +29,13 @@ set(RDKit_LIBRARIES
     RDKit::MolStandardize_static
     RDKit::Descriptors_static)
 
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS csrc/*.cpp)
+list(FILTER SOURCES EXCLUDE REGEX ".*_test.cpp$")
+list(FILTER SOURCES EXCLUDE REGEX "binding.cpp$")
+list(FILTER SOURCES EXCLUDE REGEX "main.cpp$")
+add_library(prexsyn_obj OBJECT ${SOURCES})
+set_target_properties(prexsyn_obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
+target_link_libraries(prexsyn_obj PUBLIC ${RDKit_LIBRARIES} OpenMP::OpenMP_CXX)
+
 add_executable(main csrc/main.cpp)
-target_link_libraries(main PRIVATE ${RDKit_LIBRARIES} OpenMP::OpenMP_CXX)
+target_link_libraries(main PRIVATE prexsyn_obj)

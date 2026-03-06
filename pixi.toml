@@ -26,6 +26,12 @@ libstdcxx-ng = ">=15.0.0"
 [tasks]
 install-boost = { cmd = "./boost.sh", cwd = "third_party" }
 install-rdkit = { cmd = "./rdkit.sh", cwd = "third_party" }
+configure-debug = { cmd = "cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH=$CONDA_PREFIX -G Ninja -S . -B build/debug && ln -sf ./debug/compile_commands.json build/compile_commands.json" }
+configure-release = { cmd = "cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=$CONDA_PREFIX -G Ninja -S . -B build/release" }
+configure = [ { task = "configure-debug" }, { task = "configure-release" } ]
+build-debug = { cmd = "ninja -C build/debug/" }
+build-release = { cmd = "ninja -C build/release/" }
+build = [ { task = "build-debug" }, { task = "build-release" } ]
 
 [target.linux-64.activation.env]
 LD_LIBRARY_PATH = "${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH}"
