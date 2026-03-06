@@ -49,7 +49,7 @@ SynthesisNode::precursor_molecules(size_t index) const {
 }
 
 void Synthesis::push(const std::shared_ptr<Molecule> &molecule) {
-    nodes_.push_back(std::move(SynthesisNode::from_molecule(molecule)));
+    nodes_.push_back(SynthesisNode::from_molecule(molecule));
 }
 
 static void cartesian_product(const std::vector<size_t> &sizes,
@@ -80,7 +80,7 @@ void Synthesis::push(const std::shared_ptr<Reaction> &reaction) {
     std::vector<std::shared_ptr<SynthesisNode>> precursor_nodes;
     precursor_nodes.reserve(reaction->num_reactants());
     std::vector<size_t> sizes;
-    for (int i = 0; i < reaction->num_reactants(); ++i) {
+    for (size_t i = 0; i < reaction->num_reactants(); ++i) {
         const auto &node = stack_.back();
         precursor_nodes.push_back(node);
         sizes.push_back(node->size());
