@@ -104,6 +104,10 @@ void Synthesis::push(const std::shared_ptr<Reaction> &reaction) {
         }
     });
 
+    if (new_node->size() == 0) {
+        throw SynthesisError("The reaction did not produce any products.");
+    }
+
     nodes_.push_back(std::move(new_node));
     stack_.push_back(nodes_.back());
 }

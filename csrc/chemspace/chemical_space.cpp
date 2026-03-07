@@ -16,6 +16,7 @@
 #include "../utility/serialization.hpp"
 #include "bb_lib.hpp"
 #include "rxn_lib.hpp"
+#include "synthesis.hpp"
 
 namespace prexsyn::chemspace {
 
@@ -114,6 +115,10 @@ void ChemicalSpace::print_reactant_building_block_mapping(std::ostream &os) cons
             os << "]\n";
         }
     }
+}
+
+std::unique_ptr<ChemicalSpaceSynthesis> ChemicalSpace::new_synthesis() const {
+    return std::make_unique<ChemicalSpaceSynthesis>(*this);
 }
 
 } // namespace prexsyn::chemspace

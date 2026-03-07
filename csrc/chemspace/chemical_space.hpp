@@ -10,6 +10,7 @@
 #include "../chemistry/chemistry.hpp"
 #include "bb_lib.hpp"
 #include "rxn_lib.hpp"
+#include "synthesis.hpp"
 
 namespace prexsyn::chemspace {
 
@@ -75,6 +76,8 @@ public:
 
     void build_reactant_building_block_mapping();
     void print_reactant_building_block_mapping(std::ostream &) const;
+
+    std::unique_ptr<ChemicalSpaceSynthesis> new_synthesis() const;
 };
 
 } // namespace prexsyn::chemspace
