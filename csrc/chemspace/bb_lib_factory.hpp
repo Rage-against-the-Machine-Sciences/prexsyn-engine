@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <memory>
+#include <string>
 
 #include "../chemistry/chemistry.hpp"
 #include "bb_lib.hpp"
@@ -19,6 +20,15 @@ struct BuildingBlockPreprocessor {
 };
 
 std::unique_ptr<BuildingBlockLibrary> bb_lib_from_sdf(const std::filesystem::path &,
+                                                      const BuildingBlockPreprocessor & = {});
+
+struct BuildingBlockCSVConfig {
+    std::string identifier_column = "id";
+    std::string smiles_column = "smiles";
+};
+
+std::unique_ptr<BuildingBlockLibrary> bb_lib_from_csv(const std::filesystem::path &,
+                                                      const BuildingBlockCSVConfig & = {},
                                                       const BuildingBlockPreprocessor & = {});
 
 } // namespace prexsyn::chemspace

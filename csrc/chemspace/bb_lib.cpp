@@ -23,8 +23,7 @@ const BuildingBlockItem &BuildingBlockLibrary::get(const std::string &identifier
 
 BuildingBlockLibrary::Index BuildingBlockLibrary::add(const BuildingBlockEntry &entry) {
     if (identifier_to_index_.contains(entry.identifier)) {
-        throw std::invalid_argument("Building block with the same identifier already exists: " +
-                                    entry.identifier);
+        throw BuildingBlockLibraryError("duplicate identifier: " + entry.identifier);
     }
     auto new_index = building_blocks_.size();
     building_blocks_.push_back(BuildingBlockItem{entry, new_index});

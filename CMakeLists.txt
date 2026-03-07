@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.28)
+include(FetchContent)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 project(prexsyn_engine LANGUAGES CXX)
@@ -29,15 +30,24 @@ set(RDKit_LIBRARIES
     RDKit::MolStandardize_static
     RDKit::Descriptors_static)
 
+FetchContent_Declare(
+  csv
+  GIT_REPOSITORY https://github.com/vincentlaucsb/csv-parser.git
+  GIT_SHALLOW TRUE
+  GIT_TAG 2.5.1)
+FetchContent_MakeAvailable(csv)
+
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS csrc/*.cpp)
 list(FILTER SOURCES EXCLUDE REGEX ".*_test.cpp$")
 list(FILTER SOURCES EXCLUDE REGEX "binding.cpp$")
 list(FILTER SOURCES EXCLUDE REGEX "main.cpp$")
 add_library(prexsyn_obj OBJECT ${SOURCES})
 set_target_properties(prexsyn_obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
-target_link_libraries(prexsyn_obj PUBLIC ${RDKit_LIBRARIES} OpenMP::OpenMP_CXX)
+target_link_libraries(prexsyn_obj PUBLIC ${RDKit_LIBRARIES} OpenMP::OpenMP_CXX
+                                         csv)
+target_include_directories(prexsyn_obj PUBLIC csv)
 target_compile_definitions(
-  prexsyn_obj PRIVATE SPDLOG_HEADER_ONLY SPDLOG_FMT_EXTERNAL_HO FMT_HEADER_ONLY)
+  prexsyn_obj PUBLIC SPDLOG_HEADER_ONLY SPDLOG_FMT_EXTERNAL_HO FMT_HEADER_ONLY)
 
 add_executable(main csrc/main.cpp)
 target_link_libraries(main PRIVATE prexsyn_obj)

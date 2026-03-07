@@ -4,6 +4,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -11,10 +12,15 @@
 
 namespace prexsyn::chemspace {
 
+class BuildingBlockLibraryError : public std::runtime_error {
+public:
+    explicit BuildingBlockLibraryError(const std::string &message) : std::runtime_error(message) {}
+};
+
 struct BuildingBlockEntry {
     std::shared_ptr<Molecule> molecule;
     std::string identifier;
-    std::set<std::string> classifications;
+    std::set<std::string> labels;
 };
 
 struct BuildingBlockItem : BuildingBlockEntry {
