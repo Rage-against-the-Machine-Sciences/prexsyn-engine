@@ -40,10 +40,12 @@ SynthesisNode::precursor_molecules(size_t index) const {
     for (size_t i = 0; i < precursor_nodes_.size(); ++i) {
         const auto &reactant_name = item.reactant_names.at(i);
         const auto &pre_item_index = item.precursor_item_indices.at(i);
+        const auto &node = precursor_nodes_.at(i);
         result.push_back({.precursor_index = i,
                           .reactant_name = reactant_name,
+                          .precursor_node = node,
                           .item_index = pre_item_index,
-                          .molecule = precursor_nodes_.at(i)->at(pre_item_index)});
+                          .molecule = node->at(pre_item_index)});
     }
 
     return result;

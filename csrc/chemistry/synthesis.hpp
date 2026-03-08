@@ -45,6 +45,7 @@ public:
     struct PrecursorMolecule {
         size_t precursor_index;
         std::string reactant_name;
+        std::shared_ptr<SynthesisNode> precursor_node;
         size_t item_index;
         std::shared_ptr<Molecule> molecule;
     };
