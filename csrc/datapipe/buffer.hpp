@@ -9,6 +9,7 @@
 #include <span>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 namespace prexsyn::datapipe {
@@ -19,13 +20,13 @@ struct DataType {
         int64,
     };
 
-    template <typename T> static T get_dtype() {
-        if constexpr (std::is_same_v<T, float>) {
+    template <typename U> static constexpr T get_dtype() {
+        if constexpr (std::is_same_v<U, float>) {
             return T::float32;
-        } else if constexpr (std::is_same_v<T, std::int64_t>) {
+        } else if constexpr (std::is_same_v<U, std::int64_t>) {
             return T::int64;
         } else {
-            static_assert(false, "Unsupported data type");
+            static_assert(!std::is_same_v<U, U>, "Unsupported data type");
         }
     }
 
@@ -136,7 +137,7 @@ private:
 public:
     template <typename T> std::span<T> data(const std::string &name) {
         auto index = buffer_.column_name_to_index_.at(name);
-        ColumnDef &def = buffer_.columns_[index];
+        const ColumnDef &def = buffer_.columns_[index];
         if (DataType::get_dtype<T>() != def.dtype()) {
             throw std::runtime_error("Data type mismatch");
         }

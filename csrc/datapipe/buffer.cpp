@@ -5,8 +5,19 @@
 #include <memory>
 #include <mutex>
 #include <stdexcept>
+#include <vector>
 
 namespace prexsyn::datapipe {
+
+template <size_t capacity>
+    requires(capacity > 0)
+DataBuffer<capacity>::DataBuffer(const std::vector<ColumnDef> &schema) {
+    columns_.reserve(schema.size());
+    for (size_t col_index = 0; col_index < schema.size(); ++col_index) {
+        columns_.emplace_back(schema[col_index]);
+        column_name_to_index_.emplace(schema[col_index].name(), col_index);
+    }
+}
 
 template <size_t capacity>
     requires(capacity > 0)
@@ -22,7 +33,7 @@ void DataBuffer<capacity>::put(std::unique_ptr<WriteRow<capacity>> row) {
         std::scoped_lock lock(mutex);
         for (size_t col_index = 0; col_index < columns_.size(); ++col_index) {
             auto &column = columns_[col_index];
-            auto span = column.raw_span(col_index);
+            auto span = column.raw_span(write_cursor);
             std::copy(row->row_data_[col_index].begin(), row->row_data_[col_index].end(),
                       span.begin());
         }
@@ -84,6 +95,7 @@ void DataBuffer<capacity>::get(const ReadBatch &batch) {
     }
 }
 
+template class DataBuffer<4>;
 template class DataBuffer<8192>;
 template class DataBuffer<65536>;
 
