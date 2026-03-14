@@ -33,10 +33,8 @@ std::unique_ptr<MorganFingerprint> MorganFingerprint::fcfp4() {
 
 void MorganFingerprint::operator()(const Molecule &mol, std::span<float> &out) const {
     // getFingerprint returns a raw pointer with released ownership
+    check_size(out);
     std::unique_ptr<ExplicitBitVect> fp{generator_->getFingerprint(mol.rdkit_mol())};
-    if (fp->size() != out.size()) {
-        throw std::runtime_error("Output span size does not match fingerprint size");
-    }
     for (size_t i = 0; i < out.size(); ++i) {
         out[i] = (*fp)[i] ? 1.0f : 0.0f;
     }

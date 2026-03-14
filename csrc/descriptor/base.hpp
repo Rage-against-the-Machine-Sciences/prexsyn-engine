@@ -2,6 +2,8 @@
 
 #include <cstddef>
 #include <span>
+#include <stdexcept>
+#include <string>
 #include <vector>
 
 #include "../chemistry/chemistry.hpp"
@@ -23,6 +25,14 @@ public:
     virtual size_t size() const = 0;
     virtual void operator()(const Molecule &, std::span<D> &out) const = 0;
 
+    void check_size(std::span<D> &out) const {
+        if (out.size() != size()) {
+            throw std::runtime_error("descriptor size mismatch, expected " +
+                                     std::to_string(size()) + " but got " +
+                                     std::to_string(out.size()));
+        }
+    }
+
     std::vector<D> operator()(const Molecule &mol) const {
         std::vector<D> out(size());
         (*this)(mol, out);
@@ -43,6 +53,14 @@ public:
     virtual ~SynthesisDescriptor() = default;
     virtual size_t size() const = 0;
     virtual void operator()(const chemspace::Synthesis &, std::span<D> &out) const = 0;
+
+    void check_size(std::span<D> &out) const {
+        if (out.size() != size()) {
+            throw std::runtime_error("descriptor size mismatch, expected " +
+                                     std::to_string(size()) + " but got " +
+                                     std::to_string(out.size()));
+        }
+    }
 
     std::vector<D> operator()(const chemspace::Synthesis &syn) const {
         std::vector<D> out(size());
