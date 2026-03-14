@@ -129,6 +129,15 @@ Result ChemicalSpaceSynthesis::add_intermediate(IntermediateLibrary::Index index
     }
 }
 
+Result ChemicalSpaceSynthesis::add_intermediate(const std::string &identifier) noexcept {
+    try {
+        const auto &int_item = cs_.int_lib().get(identifier);
+        return add_intermediate(int_item.index);
+    } catch (const std::exception &e) {
+        return Result::error(e.what());
+    }
+}
+
 Result ChemicalSpaceSynthesis::undo() noexcept {
     try {
         postfix_notation_.pop_back();

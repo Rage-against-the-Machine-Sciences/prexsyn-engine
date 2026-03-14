@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <ostream>
 #include <stdexcept>
 #include <vector>
 
@@ -44,5 +45,15 @@ public:
         tokens_.pop_back();
     }
 };
+
+inline std::ostream &operator<<(std::ostream &os, const PostfixNotation &pn) {
+    os << "PostfixNotation(";
+    for (const auto &token : pn.tokens()) {
+        os << (token.type == PostfixNotation::Token::Type::BuildingBlock ? "b" : "r") << token.index
+           << " ";
+    }
+    os << ")";
+    return os;
+}
 
 } // namespace prexsyn::chemspace

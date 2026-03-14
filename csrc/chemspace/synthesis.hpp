@@ -49,6 +49,7 @@ public:
     Result add_reaction(const std::string &) noexcept;
     Result add_postfix_notation(const PostfixNotation &) noexcept;
     Result add_intermediate(IntermediateLibrary::Index) noexcept;
+    Result add_intermediate(const std::string &) noexcept;
     Result undo() noexcept;
 };
 

@@ -206,6 +206,14 @@ void ChemicalSpace::print_reactant_lists(std::ostream &os) const {
             if (bb_indices.size() > 5) {
                 os << "...";
             }
+
+            for (size_t i = 0; i < std::min(int_indices.size(), size_t(5)); ++i) {
+                const auto &int_item = int_lib_->get(int_indices[i]);
+                os << int_item.identifier << ", ";
+            }
+            if (int_indices.size() > 5) {
+                os << "...";
+            }
             os << "]\n";
         }
     }
