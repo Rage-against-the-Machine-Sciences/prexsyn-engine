@@ -5,6 +5,7 @@
 #include <memory>
 #include <span>
 #include <utility>
+#include <vector>
 
 #include <GraphMol/Fingerprints/MorganGenerator.h>
 
@@ -24,10 +25,10 @@ public:
     static std::unique_ptr<MorganFingerprint> ecfp4();
     static std::unique_ptr<MorganFingerprint> fcfp4();
 
-    size_t size() const override { return generator_->getOptions()->d_fpSize; }
+    std::vector<size_t> size() const override { return {generator_->getOptions()->d_fpSize}; }
     DataType::T dtype() const override { return DataType::bool8; }
 
-    void operator()(const Molecule &, std::span<std::byte> &) const override;
+    void operator()(const Molecule &mol, std::span<std::byte> &out) const override;
 };
 
 } // namespace prexsyn::descriptor

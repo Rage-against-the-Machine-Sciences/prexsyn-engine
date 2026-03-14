@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <span>
 #include <stdexcept>
+#include <vector>
 
 #include "../chemspace/chemspace.hpp"
 #include "base.hpp"
@@ -31,10 +32,12 @@ public:
         }
     };
 
-    size_t size() const override { return max_length_ * 3; /* type + bb_idx + rxn_idx */ }
+    std::vector<size_t> size() const override {
+        return {max_length_ * 3}; /* type + bb_idx + rxn_idx */
+    }
     DataType::T dtype() const override { return DataType::int64; }
 
-    void operator()(const chemspace::Synthesis &, std::span<std::byte> &) const override;
+    void operator()(const chemspace::Synthesis &syn, std::span<std::byte> &out_raw) const override;
 };
 
 } // namespace prexsyn::descriptor

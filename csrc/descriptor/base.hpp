@@ -1,10 +1,13 @@
 #pragma once
 
 #include <cstddef>
+#include <functional>
+#include <numeric>
 #include <span>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
+#include <vector>
 
 // IWYU pragma: begin_exports
 #include "../utility/data_type.hpp"
@@ -26,8 +29,11 @@ public:
 
     virtual ~Descriptor() = default;
     virtual DataType::T dtype() const = 0;
-    virtual size_t size() const = 0;
-    size_t size_in_bytes() const { return size() * DataType::get_size(dtype()); }
+    virtual std::vector<size_t> size() const = 0;
+    size_t num_elements() const {
+        return std::accumulate(size().begin(), size().end(), 1, std::multiplies<size_t>());
+    }
+    size_t size_in_bytes() const { return num_elements() * DataType::get_size(dtype()); }
 
     template <SupportedDataType U> std::span<U> cast(std::span<std::byte> &out) const {
         if (DataType::get_dtype<U>() != dtype()) {
@@ -42,8 +48,8 @@ public:
     void check_size(std::span<std::byte> &out) const {
         if (out.size() != size_in_bytes()) {
             throw std::runtime_error("descriptor size mismatch, expected " +
-                                     std::to_string(size_in_bytes()) + " but got " +
-                                     std::to_string(out.size()));
+                                     std::to_string(size_in_bytes()) + " bytes but got " +
+                                     std::to_string(out.size()) + " bytes");
         }
     }
 };
