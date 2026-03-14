@@ -33,7 +33,7 @@ public:
     };
 
     std::vector<size_t> size() const override {
-        return {max_length_ * 3}; /* type + bb_idx + rxn_idx */
+        return {max_length_, 3}; /* type, bb_idx, rxn_idx */
     }
     DataType::T dtype() const override { return DataType::int64; }
 
