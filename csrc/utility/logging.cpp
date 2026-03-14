@@ -14,4 +14,8 @@ std::shared_ptr<spdlog::logger> logger() {
     return logger;
 }
 
+std::shared_ptr<spdlog::logger> create_logger(const std::string &module) {
+    return spdlog::stderr_color_mt("prexsyn." + module);
+}
+
 } // namespace prexsyn
