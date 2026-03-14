@@ -6,10 +6,15 @@
 
 namespace prexsyn {
 
+template <typename T>
+concept SupportedDataType =
+    std::is_same_v<T, float> || std::is_same_v<T, std::int64_t> || std::is_same_v<T, bool>;
+
 struct DataType {
     enum T : std::uint8_t {
         float32,
         int64,
+        bool8,
     };
 
     template <typename U> static constexpr T get_dtype() {
@@ -17,6 +22,8 @@ struct DataType {
             return T::float32;
         } else if constexpr (std::is_same_v<U, std::int64_t>) {
             return T::int64;
+        } else if constexpr (std::is_same_v<U, bool>) {
+            return T::bool8;
         } else {
             static_assert(!std::is_same_v<U, U>, "Unsupported data type");
         }
@@ -28,6 +35,8 @@ struct DataType {
             return 4;
         case T::int64:
             return 8;
+        case T::bool8:
+            return 1;
         }
         return 0;
     }
