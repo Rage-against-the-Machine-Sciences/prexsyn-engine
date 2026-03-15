@@ -20,6 +20,7 @@ setuptools = "*"
 scikit-build-core = ">=0.11.6"
 auditwheel = "*"
 patchelf = "*"
+pytest = "*"
 
 pre-commit = ">=4.5.1,<5"
 
@@ -44,6 +45,7 @@ test = { cmd = "ctest --output-on-failure --test-dir build/debug", depends-on = 
 
 pyinstall-debug = { cmd = "pip install -e . --no-build-isolation --config-settings=cmake.build-type=Debug -v"}
 python-asan = { cmd = "python", env = { LD_PRELOAD = "$(clang -print-file-name=libclang_rt.asan-x86_64.so)" } }
+test-py = { cmd = "pytest tests/", env = { LD_PRELOAD = "$(clang -print-file-name=libclang_rt.asan-x86_64.so)" } }
 
 [target.linux-64.activation.env]
 LD_LIBRARY_PATH = "${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH}"
