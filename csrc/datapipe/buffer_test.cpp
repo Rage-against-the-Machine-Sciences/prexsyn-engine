@@ -16,6 +16,7 @@ namespace {
 using prexsyn::DataType;
 using prexsyn::datapipe::ColumnDef;
 using prexsyn::datapipe::DataBuffer;
+using prexsyn::datapipe::NamedReadBatch;
 using prexsyn::datapipe::ReadBatch;
 
 constexpr size_t kTestCapacity = 4;
@@ -132,4 +133,69 @@ TEST(DataBufferTest, GetThrowsWhenBatchExceedsCapacity) {
                 ReadBatch{kTestCapacity + 1, {as_writable_bytes(scores), as_writable_bytes(ids)}});
         },
         std::runtime_error);
+}
+
+TEST(DataBufferTest, NamedReadBatchReadsColumnsByName) {
+    DataBuffer<kTestCapacity> buffer(make_schema());
+
+    write_row(buffer, {7.0F, 7.5F}, 70);
+    write_row(buffer, {8.0F, 8.5F}, 80);
+
+    std::vector<float> scores(4);
+    std::vector<std::int64_t> ids(2);
+
+    NamedReadBatch batch;
+    batch.batch_size = 2;
+    batch.add("ids", std::span<std::int64_t>(ids));
+    batch.add("scores", std::span<float>(scores));
+
+    buffer.get(batch);
+
+    expect_row(scores, ids, 0, {7.0F, 7.5F}, 70);
+    expect_row(scores, ids, 1, {8.0F, 8.5F}, 80);
+}
+
+TEST(DataBufferTest, NamedReadBatchThrowsWhenColumnMissing) {
+    DataBuffer<kTestCapacity> buffer(make_schema());
+
+    write_row(buffer, {9.0F, 9.5F}, 90);
+
+    std::vector<float> scores(2);
+    NamedReadBatch batch;
+    batch.batch_size = 1;
+    batch.add("scores", std::span<float>(scores));
+
+    EXPECT_THROW({ buffer.get(batch); }, std::runtime_error);
+}
+
+TEST(DataBufferTest, NamedReadBatchMaintainsOrderAcrossWraparound) {
+    DataBuffer<kTestCapacity> buffer(make_schema());
+
+    write_row(buffer, {0.0F, 0.5F}, 200);
+    write_row(buffer, {1.0F, 1.5F}, 201);
+    write_row(buffer, {2.0F, 2.5F}, 202);
+    write_row(buffer, {3.0F, 3.5F}, 203);
+
+    std::vector<float> first_scores(6);
+    std::vector<std::int64_t> first_ids(3);
+    buffer.get(ReadBatch{3, {as_writable_bytes(first_scores), as_writable_bytes(first_ids)}});
+
+    write_row(buffer, {4.0F, 4.5F}, 204);
+    write_row(buffer, {5.0F, 5.5F}, 205);
+    write_row(buffer, {6.0F, 6.5F}, 206);
+
+    std::vector<float> wrapped_scores(8);
+    std::vector<std::int64_t> wrapped_ids(4);
+
+    NamedReadBatch batch;
+    batch.batch_size = 4;
+    batch.add("ids", std::span<std::int64_t>(wrapped_ids));
+    batch.add("scores", std::span<float>(wrapped_scores));
+
+    buffer.get(batch);
+
+    expect_row(wrapped_scores, wrapped_ids, 0, {3.0F, 3.5F}, 203);
+    expect_row(wrapped_scores, wrapped_ids, 1, {4.0F, 4.5F}, 204);
+    expect_row(wrapped_scores, wrapped_ids, 2, {5.0F, 5.5F}, 205);
+    expect_row(wrapped_scores, wrapped_ids, 3, {6.0F, 6.5F}, 206);
 }
