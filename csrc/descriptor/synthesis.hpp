@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <span>
 #include <stdexcept>
 #include <vector>
@@ -25,12 +26,16 @@ private:
     size_t max_length_;
 
 public:
-    SynthesisPostfixNotation(const TokenDef &token_def = TokenDef(), size_t max_length = 16)
+    SynthesisPostfixNotation(const TokenDef &token_def, size_t max_length)
         : token_def_(token_def), max_length_(max_length) {
         if (max_length_ < 4) {
             throw std::invalid_argument("max_length must be at least 4");
         }
     };
+
+    static std::unique_ptr<SynthesisPostfixNotation> create(size_t max_length = 16) {
+        return std::make_unique<SynthesisPostfixNotation>(TokenDef(), max_length);
+    }
 
     std::vector<size_t> size() const override {
         return {max_length_, 3}; /* type, bb_idx, rxn_idx */
