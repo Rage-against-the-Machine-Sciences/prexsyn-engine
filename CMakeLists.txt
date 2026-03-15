@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.28)
+include(FetchContent)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 project(prexsyn_engine LANGUAGES CXX)
@@ -7,112 +8,64 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -Wall -Wextra -fsanitize=address")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -mavx2 -mfma -ffast-math")
 
+find_package(
+  OpenMP
+  COMPONENTS CXX
+  REQUIRED)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+
+set(Boost_USE_STATIC_LIBS ON)
+
 find_package(RDKit REQUIRED)
 message(STATUS "RDKit_INCLUDE_DIRS: ${RDKit_INCLUDE_DIRS}")
 set(RDKit_LIBRARIES
-    RDKit::RDGeneral
-    RDKit::GraphMol
-    RDKit::SmilesParse
-    RDKit::ChemReactions
-    RDKit::GeneralizedSubstruct
-    RDKit::DataStructs
-    RDKit::Fingerprints
-    RDKit::MolStandardize
-    RDKit::Descriptors
-    RDKit::DistGeometry
-    RDKit::DistGeomHelpers
-    RDKit::ForceField
-    RDKit::ForceFieldHelpers
-    RDKit::ShapeHelpers
-    RDKit::RDGeometryLib
-    RDKit::MolAlign
-    RDKit::O3AAlign
-    RDKit::MolTransforms
-    RDKit::ChemTransforms
-    RDKit::MolChemicalFeatures)
+    RDKit::RDGeneral_static
+    RDKit::GraphMol_static
+    RDKit::SmilesParse_static
+    RDKit::ChemReactions_static
+    RDKit::GeneralizedSubstruct_static
+    RDKit::DataStructs_static
+    RDKit::Fingerprints_static
+    RDKit::MolStandardize_static
+    RDKit::Descriptors_static)
 
-find_package(Python3 COMPONENTS Interpreter Development NumPy)
-message(STATUS "Python3_EXECUTABLE: ${Python3_EXECUTABLE}")
-message(STATUS "Python3_INCLUDE_DIRS: ${Python3_INCLUDE_DIRS}")
-message(STATUS "Python3_LIBRARIES: ${Python3_LIBRARIES}")
-message(STATUS "Python3_SOABI: ${Python3_SOABI}")
+FetchContent_Declare(
+  csv
+  GIT_REPOSITORY https://github.com/vincentlaucsb/csv-parser.git
+  GIT_SHALLOW TRUE
+  GIT_TAG 2.5.1)
+FetchContent_MakeAvailable(csv)
 
-find_package(Boost COMPONENTS system serialization iostreams python numpy
-                              REQUIRED)
-message(STATUS "Boost_INCLUDE_DIRS: ${Boost_INCLUDE_DIRS}")
-message(STATUS "Available Boost_LIBRARIES: ${Boost_LIBRARIES}")
-
-find_package(OpenMP COMPONENTS CXX REQUIRED)
-if(OPENMP_FOUND)
-  message(STATUS "OpenMP found.")
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-endif()
-
-set(LIB_SOURCES
-    csrc/chemspace/chemspace.cpp
-    csrc/chemspace/indexer.cpp
-    csrc/container/building_block_list.cpp
-    csrc/container/reaction_list.cpp
-    csrc/detokenizer.cpp
-    csrc/featurizer/base.cpp
-    csrc/featurizer/fingerprint.cpp
-    csrc/featurizer/rdkit_descriptors.cpp
-    csrc/featurizer/substructures.cpp
-    csrc/featurizer/scaffold.cpp
-    csrc/featurizer/synthesis.cpp
-    csrc/fingerprints.cpp
-    csrc/molops.cpp
-    csrc/synthesis.cpp)
-set(LIB_LINK_LIBRARIES Boost::system Boost::serialization Boost::iostreams
-                       ${RDKit_LIBRARIES})
-add_library(libprexsyn OBJECT ${LIB_SOURCES})
-set_target_properties(libprexsyn PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
-target_link_libraries(libprexsyn PRIVATE ${LIB_LINK_LIBRARIES})
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS csrc/*.cpp)
+list(FILTER SOURCES EXCLUDE REGEX ".*_test.cpp$")
+list(FILTER SOURCES EXCLUDE REGEX "binding.cpp$")
+list(FILTER SOURCES EXCLUDE REGEX "main.cpp$")
+add_library(prexsyn_obj OBJECT ${SOURCES})
+set_target_properties(prexsyn_obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
+target_link_libraries(prexsyn_obj PUBLIC ${RDKit_LIBRARIES} OpenMP::OpenMP_CXX)
+target_include_directories(prexsyn_obj PUBLIC ${csv_SOURCE_DIR}/single_include)
 target_compile_definitions(
-  libprexsyn PRIVATE SPDLOG_HEADER_ONLY SPDLOG_FMT_EXTERNAL_HO FMT_HEADER_ONLY)
+  prexsyn_obj PUBLIC SPDLOG_HEADER_ONLY SPDLOG_FMT_EXTERNAL_HO FMT_HEADER_ONLY)
 
-function(add_pymod name)
-  if(${ARGC} EQUAL 1)
-    set(sources csrc/${name}_bind.cpp)
-  else()
-    set(sources ${ARGN})
-  endif()
-  python3_add_library(${name} MODULE WITH_SOABI ${sources}
-                      $<TARGET_OBJECTS:libprexsyn>)
-  target_link_libraries(${name} PRIVATE ${Python3_LIBRARIES} Boost::python
-                                        Boost::numpy ${LIB_LINK_LIBRARIES})
-endfunction()
+add_executable(main csrc/main.cpp)
+target_link_libraries(main PRIVATE prexsyn_obj)
 
-add_pymod(building_block_list csrc/container/building_block_list_bind.cpp)
-add_pymod(chemspace csrc/chemspace/chemspace_bind.cpp)
-add_pymod(detokenizer)
-add_pymod(fingerprints)
-add_pymod(indexer csrc/chemspace/indexer_bind.cpp)
-add_pymod(molops)
-add_pymod(pipeline csrc/pipeline/bind.cpp)
-add_pymod(reaction_list csrc/container/reaction_list_bind.cpp)
-add_pymod(synthesis)
-add_pymod(types)
-add_pymod(feature csrc/feature/bind.cpp)
-add_pymod(featurizer__base csrc/featurizer/base_bind.cpp)
-add_pymod(featurizer__fingerprint csrc/featurizer/fingerprint_bind.cpp)
-add_pymod(featurizer__rdkit_descriptors
-          csrc/featurizer/rdkit_descriptors_bind.cpp)
-add_pymod(featurizer__substructures csrc/featurizer/substructures_bind.cpp)
-add_pymod(featurizer__scaffold csrc/featurizer/scaffold_bind.cpp)
-add_pymod(featurizer__synthesis csrc/featurizer/synthesis_bind.cpp)
+find_package(Python COMPONENTS Interpreter Development)
+find_package(pybind11 CONFIG)
+file(GLOB_RECURSE BIND_SOURCES CONFIGURE_DEPENDS csrc/*binding.cpp)
+pybind11_add_module(prexsyn_engine ${BIND_SOURCES})
+target_link_libraries(prexsyn_engine PRIVATE prexsyn_obj)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  target_compile_options(prexsyn_engine PRIVATE -shared-libasan)
+endif()
+install(TARGETS prexsyn_engine DESTINATION .)
 
-if(BUILD_TESTS)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   enable_testing()
-  file(COPY resources DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-  set(TEST_SOURCES csrc/synthesis_test.cpp csrc/featurizer/product_test.cpp
-                   csrc/pipeline/data_buffer_test.cpp)
   find_package(GTest REQUIRED)
-
-  add_executable(unittest ${TEST_SOURCES} $<TARGET_OBJECTS:libprexsyn>)
-  target_link_libraries(unittest PRIVATE GTest::gtest_main
-                                         ${LIB_LINK_LIBRARIES})
-  include(GoogleTest)
-  gtest_discover_tests(unittest)
+  file(GLOB_RECURSE TEST_SOURCES csrc/*_test.cpp)
+  add_executable(tests ${TEST_SOURCES})
+  target_link_libraries(tests PRIVATE prexsyn_obj GTest::GTest GTest::Main)
+  gtest_discover_tests(tests)
 endif()

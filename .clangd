@@ -1,0 +1,6 @@
+---
+If:
+  PathMatch: csrc/.*
+Diagnostics:
+  UnusedIncludes: Strict
+  MissingIncludes: Strict
