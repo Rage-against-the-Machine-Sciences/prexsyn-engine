@@ -72,15 +72,14 @@ static void def_reaction(py::module &m) {
                  }
                  return py_matches;
              })
-        .def("apply_list",
-             [](const Reaction &rxn, const std::vector<std::shared_ptr<Molecule>> &reactants) {
-                 return rxn.apply(reactants);
-             })
-        .def("apply_dict",
-             [](const Reaction &rxn,
-                const std::map<std::string, std::shared_ptr<Molecule>> &reactants) {
-                 return rxn.apply(reactants);
-             })
+        .def("apply",
+             py::overload_cast<const std::map<std::string, std::shared_ptr<Molecule>> &, bool>(
+                 &Reaction::apply, py::const_),
+             py::arg("reactants"), py::arg("ignore_errors") = false)
+        .def("apply",
+             py::overload_cast<const std::vector<std::shared_ptr<Molecule>> &, bool>(
+                 &Reaction::apply, py::const_),
+             py::arg("reactants"), py::arg("ignore_errors") = false)
         .def(py::pickle([](const Reaction &rxn) { return py::bytes(rxn.serialize()); },
                         [](const py::bytes &pickle) {
                             std::string pickle_str(pickle);

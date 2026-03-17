@@ -97,7 +97,7 @@ def test_pickle_roundtrip_preserves_reaction_metadata():
 def test_apply_dict_success_returns_expected_product():
     rxn = make_reaction_with_named_reactants()
 
-    outcomes = rxn.apply_dict({"A": make_reactant_a(), "B": make_reactant_b()})
+    outcomes = rxn.apply({"A": make_reactant_a(), "B": make_reactant_b()})
 
     assert len(outcomes) == 1
     assert outcomes[0].empty() is False
@@ -109,13 +109,13 @@ def test_apply_dict_unknown_reactant_name_raises_reaction_error():
     rxn = make_reaction_with_named_reactants()
 
     with pytest.raises(ReactionError, match="Unknown reactant name"):
-        rxn.apply_dict({"A": make_reactant_a(), "C": make_reactant_b()})
+        rxn.apply({"A": make_reactant_a(), "C": make_reactant_b()})
 
 
 def test_apply_list_success_tracks_assignment_and_product():
     rxn = make_reaction_with_named_reactants()
 
-    outcomes = rxn.apply_list([make_reactant_a(), make_reactant_b()])
+    outcomes = rxn.apply([make_reactant_a(), make_reactant_b()])
 
     assert len(outcomes) == 1
     assert outcomes[0].reactant_names == ["A", "B"]
@@ -130,14 +130,14 @@ def test_apply_list_wrong_reactant_count_raises_reaction_error():
         ReactionError,
         match="Number of reactants provided does not match number of reactant templates",
     ):
-        rxn.apply_list([make_reactant_a()])
+        rxn.apply([make_reactant_a()])
 
 
 def test_apply_dict_can_return_multiple_outcomes():
     # Each ethane reactant has two matching carbon atoms, yielding multiple outcomes.
     rxn = Reaction.from_smarts("[C:1].[C:2]>>[C:1][C:2]", ["A", "B"])
 
-    outcomes = rxn.apply_dict(
+    outcomes = rxn.apply(
         {"A": Molecule.from_smiles("CC"), "B": Molecule.from_smiles("CC")}
     )
 
@@ -149,7 +149,7 @@ def test_apply_list_can_return_multiple_outcomes_from_assignments():
     # Symmetric templates with identical reactants produce outcomes for multiple assignments.
     rxn = Reaction.from_smarts("[C:1].[C:2]>>[C:1][C:2]", ["A", "B"])
 
-    outcomes = rxn.apply_list([Molecule.from_smiles("C"), Molecule.from_smiles("C")])
+    outcomes = rxn.apply([Molecule.from_smiles("C"), Molecule.from_smiles("C")])
 
     assert len(outcomes) > 1
     assert ["A", "B"] in [outcome.reactant_names for outcome in outcomes]
