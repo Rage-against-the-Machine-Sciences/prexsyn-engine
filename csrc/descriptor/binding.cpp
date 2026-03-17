@@ -22,26 +22,15 @@ namespace py = pybind11;
 using namespace prexsyn;
 using namespace prexsyn::descriptor;
 
-static auto get_molecule_numpy_array(const MoleculeDescriptor &desc, const Molecule &mol) {
+template <typename DescriptorType, typename InputType>
+static auto get_numpy_array(const DescriptorType &desc, const InputType &input) {
     auto dtype = data_type_to_numpy_dtype(desc.dtype());
     auto shape = desc.size();
     auto arr = py::array(dtype, shape);
 
     auto span =
         std::span<std::byte>(reinterpret_cast<std::byte *>(arr.mutable_data()), arr.nbytes());
-    desc(mol, span);
-    return arr;
-}
-
-static auto get_synthesis_numpy_array(const SynthesisDescriptor &desc,
-                                      const chemspace::ChemicalSpaceSynthesis &syn) {
-    auto dtype = data_type_to_numpy_dtype(desc.dtype());
-    auto shape = desc.size();
-    auto arr = py::array(dtype, shape);
-
-    auto span =
-        std::span<std::byte>(reinterpret_cast<std::byte *>(arr.mutable_data()), arr.nbytes());
-    desc(syn, span);
+    desc(input, span);
     return arr;
 }
 
@@ -52,7 +41,7 @@ void def_module_descriptor(pybind11::module &m) {
         .def("size", &MoleculeDescriptor::size)
         .def("num_elements", &MoleculeDescriptor::num_elements)
         .def("size_in_bytes", &MoleculeDescriptor::size_in_bytes)
-        .def("__call__", &get_molecule_numpy_array);
+        .def("__call__", &get_numpy_array<MoleculeDescriptor, Molecule>);
 
     py::class_<SynthesisDescriptor, py::smart_holder>(m, "_SynthesisDescriptor")
         .def("dtype",
@@ -60,7 +49,7 @@ void def_module_descriptor(pybind11::module &m) {
         .def("size", &SynthesisDescriptor::size)
         .def("num_elements", &SynthesisDescriptor::num_elements)
         .def("size_in_bytes", &SynthesisDescriptor::size_in_bytes)
-        .def("__call__", &get_synthesis_numpy_array);
+        .def("__call__", &get_numpy_array<SynthesisDescriptor, chemspace::ChemicalSpaceSynthesis>);
 
     def_submodule_morgan(m);
     def_submodule_synthesis(m);
