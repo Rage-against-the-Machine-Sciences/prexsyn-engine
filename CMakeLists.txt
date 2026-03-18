@@ -37,6 +37,18 @@ FetchContent_Declare(
   GIT_TAG 2.5.1)
 FetchContent_MakeAvailable(csv)
 
+FetchContent_Declare(
+  googletest
+  GIT_REPOSITORY https://github.com/google/googletest.git
+  GIT_SHALLOW TRUE
+  GIT_TAG v1.17.0)
+# For Windows: Prevent overriding the parent project's compiler/linker settings
+set(gtest_force_shared_crt
+    ON
+    CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+include(GoogleTest)
+
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS csrc/*.cpp)
 list(FILTER SOURCES EXCLUDE REGEX ".*_test.cpp$")
 list(FILTER SOURCES EXCLUDE REGEX "bind.cpp$")
@@ -63,9 +75,8 @@ install(TARGETS prexsyn_engine DESTINATION .)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   enable_testing()
-  find_package(GTest REQUIRED)
   file(GLOB_RECURSE TEST_SOURCES csrc/*_test.cpp)
   add_executable(tests ${TEST_SOURCES})
-  target_link_libraries(tests PRIVATE prexsyn_obj GTest::GTest GTest::Main)
+  target_link_libraries(tests PRIVATE prexsyn_obj GTest::gtest_main)
   gtest_discover_tests(tests)
 endif()
