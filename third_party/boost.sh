@@ -1,9 +1,9 @@
 #!/bin/bash
 
-if [[ -n "$CONDA_PREFIX" ]]; then
-    echo "Installing Boost to $CONDA_PREFIX"
-else
-    echo "Error: CONDA_PREFIX is not set. Please activate a conda environment."
+PREFIX="$1"
+
+if [[ -z "$PREFIX" ]]; then
+    echo "Usage: $0 <install_prefix>"
     exit 1
 fi
 
@@ -17,10 +17,10 @@ fi
 cd boost
 
 if [[ -n "$CC" ]]; then
-    ./bootstrap.sh --prefix=$CONDA_PREFIX --with-toolset=$(basename $CC)
+    ./bootstrap.sh --prefix=$PREFIX --with-toolset=$(basename $CC)
 else
-    ./bootstrap.sh --prefix=$CONDA_PREFIX
+    ./bootstrap.sh --prefix=$PREFIX
 fi
 ./b2 --clean-all
-./b2 link=static cxxflags=-fPIC cflags=-fPIC
+./b2 link=static cxxflags=-fPIC cflags=-fPIC --without-python --without-numpy
 ./b2 install

@@ -2,3 +2,5 @@
 !.gitignore
 !boost.sh
 !rdkit.sh
+!pkgs/
+!pkgs/.gitkeep

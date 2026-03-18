@@ -21,17 +21,17 @@ mypy = "*"
 numpy = ">=2.4.2,<3"
 pre-commit = ">=4.5.1,<5"
 
-# [target.linux-64.dependencies]
-# clangxx = "==21.1.0"
-# llvm-openmp = "==21.1.0"
-# clang-tools = "==21.1.0"
-# llvm-tools = "==21.1.0"
-# compiler-rt = "==21.1.0"
-# libstdcxx-ng = ">=15.0.0"
+[feature.dev-linux-64.dependencies]
+clangxx = "==21.1.0"
+llvm-openmp = "==21.1.0"
+clang-tools = "==21.1.0"
+llvm-tools = "==21.1.0"
+compiler-rt = "==21.1.0"
+libstdcxx-ng = ">=15.0.0"
 
 [tasks]
-install-boost = { cmd = "./boost.sh", cwd = "third_party" }
-install-rdkit = { cmd = "./rdkit.sh", cwd = "third_party" }
+install-boost = { cmd = "./boost.sh $(pwd)/pkgs", cwd = "third_party" }
+install-rdkit = { cmd = "./rdkit.sh $(pwd)/pkgs", cwd = "third_party" }
 configure-debug = { cmd = "cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH=$CONDA_PREFIX -G Ninja -S . -B build/debug && ln -sf ./debug/compile_commands.json build/compile_commands.json" }
 configure-release = { cmd = "cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=$CONDA_PREFIX -G Ninja -S . -B build/release" }
 configure = [ { task = "configure-debug" }, { task = "configure-release" } ]
@@ -40,16 +40,22 @@ build-release = { cmd = "ninja -C build/release/" }
 build = [ { task = "build-debug" }, { task = "build-release" } ]
 test = { cmd = "ctest --output-on-failure --test-dir build/debug", depends-on = ["build-debug"] }
 
-pyinstall-debug = { cmd = "pip install -e . --no-build-isolation --config-settings=cmake.build-type=Debug -v"}
-python-asan = { cmd = "python", env = { LD_PRELOAD = "$(clang -print-file-name=libclang_rt.asan-x86_64.so)" }, depends-on = ["pyinstall-debug"] }
-test-py-debug = { cmd = "pytest tests/", env = { LD_PRELOAD = "$(clang -print-file-name=libclang_rt.asan-x86_64.so)" }, depends-on = ["pyinstall-debug"] }
-
 pyinstall = { cmd = "pip install -e . --no-build-isolation -v" }
 test-py = { cmd = "pytest tests/", depends-on = ["pyinstall"] }
 generate-stubs = { cmd = "stubgen -p prexsyn_engine -o typings", depends-on = ["pyinstall"] }
 
+[feature.dev-linux-64.tasks]
+pyinstall-debug = { cmd = "pip install -e . --no-build-isolation --config-settings=cmake.build-type=Debug -v"}
+python-asan = { cmd = "python", env = { LD_PRELOAD = "$(clang -print-file-name=libclang_rt.asan-x86_64.so)" }, depends-on = ["pyinstall-debug"] }
+test-py-debug = { cmd = "pytest tests/", env = { LD_PRELOAD = "$(clang -print-file-name=libclang_rt.asan-x86_64.so)" }, depends-on = ["pyinstall-debug"] }
+
 [target.linux-64.activation.env]
 LD_LIBRARY_PATH = "${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH}"
-# ASAN_SYMBOLIZER_PATH = "${CONDA_PREFIX}/bin/llvm-symbolizer"
-# CXX = "${CONDA_PREFIX}/bin/clang++"
-# CC = "${CONDA_PREFIX}/bin/clang"
+
+[feature.dev-linux-64.activation.env]
+ASAN_SYMBOLIZER_PATH = "${CONDA_PREFIX}/bin/llvm-symbolizer"
+CXX = "${CONDA_PREFIX}/bin/clang++"
+CC = "${CONDA_PREFIX}/bin/clang"
+
+[environments]
+dev-linux-64 = { features = ["dev-linux-64"] }

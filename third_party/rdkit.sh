@@ -1,9 +1,9 @@
 #!/bin/bash
 
-if [[ -n "$CONDA_PREFIX" ]]; then
-    echo "Installing Boost to $CONDA_PREFIX"
-else
-    echo "Error: CONDA_PREFIX is not set. Please activate a conda environment."
+PREFIX="$1"
+
+if [[ -z "$PREFIX" ]]; then
+    echo "Usage: $0 <install_prefix>"
     exit 1
 fi
 
@@ -19,7 +19,8 @@ cd build
 
 cmake -DCMAKE_BUILD_TYPE=Release \
     -DRDK_INSTALL_INTREE=OFF \
-    -DCMAKE_INSTALL_PREFIX="$CONDA_PREFIX" \
+    -DCMAKE_PREFIX_PATH="$PREFIX" \
+    -DCMAKE_INSTALL_PREFIX="$PREFIX" \
     -DRDK_BUILD_CPP_TESTS=OFF \
     -DRDK_BUILD_PYTHON_WRAPPERS=OFF \
     -DRDK_BUILD_CHEMDRAW_SUPPORT=OFF \
@@ -30,4 +31,4 @@ cmake -DCMAKE_BUILD_TYPE=Release \
     -G Ninja ..
 
 cmake --build .
-cmake --install . --prefix $CONDA_PREFIX
+cmake --install . --prefix $PREFIX
