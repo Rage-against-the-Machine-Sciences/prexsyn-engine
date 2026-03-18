@@ -9,9 +9,9 @@ set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -Wall -Wextra -fsanitize=address")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -mavx2 -mfma -ffast-math")
 
 find_package(
-  OpenMP
-  COMPONENTS CXX
-  REQUIRED)
+    OpenMP
+    COMPONENTS CXX
+    REQUIRED)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 
@@ -31,17 +31,17 @@ set(RDKit_LIBRARIES
     RDKit::Descriptors_static)
 
 FetchContent_Declare(
-  csv
-  GIT_REPOSITORY https://github.com/vincentlaucsb/csv-parser.git
-  GIT_SHALLOW TRUE
-  GIT_TAG 2.5.1)
+    csv
+    GIT_REPOSITORY https://github.com/vincentlaucsb/csv-parser.git
+    GIT_SHALLOW TRUE
+    GIT_TAG 2.5.1)
 FetchContent_MakeAvailable(csv)
 
 FetchContent_Declare(
-  googletest
-  GIT_REPOSITORY https://github.com/google/googletest.git
-  GIT_SHALLOW TRUE
-  GIT_TAG v1.17.0)
+    googletest
+    GIT_REPOSITORY https://github.com/google/googletest.git
+    GIT_SHALLOW TRUE
+    GIT_TAG v1.17.0)
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt
     ON
@@ -50,17 +50,17 @@ FetchContent_MakeAvailable(googletest)
 include(GoogleTest)
 
 FetchContent_Declare(
-  pybind11
-  GIT_REPOSITORY https://github.com/pybind/pybind11.git
-  GIT_SHALLOW TRUE
-  GIT_TAG v3.0.2)
+    pybind11
+    GIT_REPOSITORY https://github.com/pybind/pybind11.git
+    GIT_SHALLOW TRUE
+    GIT_TAG v3.0.2)
 FetchContent_MakeAvailable(pybind11)
 
 set(SPDLOG_BUILD_PIC ON)
 FetchContent_Declare(
-  spdlog
-  GIT_REPOSITORY https://github.com/gabime/spdlog.git
-  GIT_TAG v1.17.0)
+    spdlog
+    GIT_REPOSITORY https://github.com/gabime/spdlog.git
+    GIT_TAG v1.17.0)
 FetchContent_MakeAvailable(spdlog)
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS csrc/*.cpp)
@@ -69,10 +69,8 @@ list(FILTER SOURCES EXCLUDE REGEX "bind.cpp$")
 list(FILTER SOURCES EXCLUDE REGEX "main.cpp$")
 add_library(prexsyn_obj OBJECT ${SOURCES})
 set_target_properties(prexsyn_obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
-target_link_libraries(prexsyn_obj PUBLIC ${RDKit_LIBRARIES} OpenMP::OpenMP_CXX
-                                         spdlog::spdlog)
-target_include_directories(prexsyn_obj PUBLIC ${csv_SOURCE_DIR}/single_include
-                                              ${spdlog_SOURCE_DIR}/include)
+target_link_libraries(prexsyn_obj PUBLIC ${RDKit_LIBRARIES} OpenMP::OpenMP_CXX spdlog::spdlog)
+target_include_directories(prexsyn_obj PUBLIC ${csv_SOURCE_DIR}/single_include ${spdlog_SOURCE_DIR}/include)
 add_executable(main csrc/main.cpp)
 target_link_libraries(main PRIVATE prexsyn_obj)
 
@@ -81,14 +79,14 @@ file(GLOB_RECURSE BIND_SOURCES CONFIGURE_DEPENDS csrc/*bind.cpp)
 pybind11_add_module(prexsyn_engine ${BIND_SOURCES})
 target_link_libraries(prexsyn_engine PRIVATE prexsyn_obj)
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  target_compile_options(prexsyn_engine PRIVATE -shared-libasan)
+    target_compile_options(prexsyn_engine PRIVATE -shared-libasan)
 endif()
 install(TARGETS prexsyn_engine DESTINATION .)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  enable_testing()
-  file(GLOB_RECURSE TEST_SOURCES csrc/*_test.cpp)
-  add_executable(tests ${TEST_SOURCES})
-  target_link_libraries(tests PRIVATE prexsyn_obj GTest::gtest_main)
-  gtest_discover_tests(tests)
+    enable_testing()
+    file(GLOB_RECURSE TEST_SOURCES csrc/*_test.cpp)
+    add_executable(tests ${TEST_SOURCES})
+    target_link_libraries(tests PRIVATE prexsyn_obj GTest::gtest_main)
+    gtest_discover_tests(tests)
 endif()
