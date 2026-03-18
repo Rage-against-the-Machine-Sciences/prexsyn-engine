@@ -15,12 +15,15 @@
 
 namespace prexsyn::datapipe {
 
+size_t DataPipeline::global_pipeline_id_ = 0;
+
 DataPipeline::DataPipeline(const std::shared_ptr<ChemicalSpace> &cs,
                            const std::map<std::string, std::shared_ptr<MoleculeDescriptor>> &md,
                            const std::map<std::string, std::shared_ptr<SynthesisDescriptor>> &sd,
                            const GeneratorConfig &generator_config)
     : chemical_space_(cs), generator_config_(generator_config), molecule_descriptors_(md),
-      synthesis_descriptors_(sd), logger_(create_logger("DataPipeline")) {
+      synthesis_descriptors_(sd),
+      logger_(create_logger("DataPipeline" + std::to_string(global_pipeline_id_++))) {
     std::vector<ColumnDef> column_defs;
     column_defs.reserve(molecule_descriptors_.size() + synthesis_descriptors_.size());
 

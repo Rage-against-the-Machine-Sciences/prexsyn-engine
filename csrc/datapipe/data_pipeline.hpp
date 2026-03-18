@@ -25,6 +25,8 @@ class Worker;
 
 class DataPipeline {
 private:
+    static size_t global_pipeline_id_;
+
     std::shared_ptr<ChemicalSpace> chemical_space_;
     GeneratorConfig generator_config_;
 
