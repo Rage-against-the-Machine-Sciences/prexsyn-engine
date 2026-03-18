@@ -16,8 +16,11 @@ else
 fi
 cd boost
 
-
-./bootstrap.sh --prefix=$CONDA_PREFIX --with-toolset=clang
+if [[ -n "$CC" ]]; then
+    ./bootstrap.sh --prefix=$CONDA_PREFIX --with-toolset=$(basename $CC)
+else
+    ./bootstrap.sh --prefix=$CONDA_PREFIX
+fi
 ./b2 --clean-all
 ./b2 link=static cxxflags=-fPIC cflags=-fPIC
 ./b2 install
