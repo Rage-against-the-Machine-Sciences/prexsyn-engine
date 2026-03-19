@@ -7,12 +7,21 @@ if [[ -z "$PREFIX" ]]; then
     exit 1
 fi
 
+mkdir -p "$PREFIX"
+
+LIBRARIES=(serialization iostreams program_options)
+
 if [[ -d "boost" ]]; then
     echo "Boost directory already exists. Skipping clone."
 else
-    wget https://archives.boost.io/release/1.86.0/source/boost_1_86_0.tar.gz
-    tar -xzf boost_1_86_0.tar.gz
-    mv boost_1_86_0 boost
+    git clone https://github.com/boostorg/boost.git -b boost-1.86.0 boost --depth 1
+    pushd boost
+    git submodule update --depth 1 -q --init tools/boostdep
+    for lib in "${LIBRARIES[@]}"; do
+        git submodule update --depth 1 -q --init "libs/$lib"
+        python tools/boostdep/depinst/depinst.py -X test -g "--depth 1" $lib
+    done
+    popd
 fi
 cd boost
 
@@ -22,7 +31,7 @@ else
     ARGS=""
 fi
 
-./bootstrap.sh --prefix=$PREFIX --with-libraries=serialization,iostreams,program_options $ARGS
+./bootstrap.sh --prefix=$PREFIX $ARGS #--with-libraries=$(IFS=,; echo "${LIBRARIES[*]}")
 ./b2 --clean-all
 ./b2 link=static cxxflags=-fPIC cflags=-fPIC
 ./b2 install

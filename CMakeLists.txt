@@ -1,7 +1,10 @@
 cmake_minimum_required(VERSION 3.28)
 include(FetchContent)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/third_party/pkgs")
+
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/_third_party")
+list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_BINARY_DIR}/_third_party")
+# list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/third_party/pkgs")
 
 project(prexsyn_engine LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
@@ -15,6 +18,30 @@ find_package(
     REQUIRED)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+
+if(NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/_third_party/include/boost")
+    execute_process(
+        COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/third_party/boost.sh" "${CMAKE_CURRENT_BINARY_DIR}/_third_party"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+        RESULT_VARIABLE BOOST_INSTALL_RESULT)
+    if(NOT BOOST_INSTALL_RESULT EQUAL 0)
+        message(FATAL_ERROR "Failed to install Boost: ${BOOST_INSTALL_RESULT}")
+    endif()
+else()
+    message(STATUS "Boost already installed. Skipping installation.")
+endif()
+
+if(NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/_third_party/include/rdkit")
+    execute_process(
+        COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/third_party/rdkit.sh" "${CMAKE_CURRENT_BINARY_DIR}/_third_party"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+        RESULT_VARIABLE RDKIT_INSTALL_RESULT)
+    if(NOT RDKIT_INSTALL_RESULT EQUAL 0)
+        message(FATAL_ERROR "Failed to install RDKit: ${RDKIT_INSTALL_RESULT}")
+    endif()
+else()
+    message(STATUS "RDKit already installed. Skipping installation.")
+endif()
 
 set(Boost_USE_STATIC_LIBS ON)
 
