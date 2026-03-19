@@ -30,6 +30,7 @@ compiler-rt = "==21.1.0"
 libstdcxx-ng = ">=15.0.0"
 
 [tasks]
+build-python = { cmd = "python -m build" }
 
 [feature.dev-linux-64.tasks]
 clean-third-party = { cmd = "./clean.sh", cwd = "third_party" }
