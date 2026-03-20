@@ -152,16 +152,25 @@ void ChemicalSpace::generate_intermediates() {
 void ChemicalSpace::build_reactant_lists_for_building_blocks() {
     logger()->info("Starting to build reactant-building block lists...");
     rnt_bb_mapping_.init(*rxn_lib_);
+
+    size_t count_processed = 0;
 #pragma omp parallel for schedule(dynamic)
-    for (const auto &bb : *bb_lib_) {
+    for (size_t i = 0; i < bb_lib_->size(); ++i) {
+        const auto &bb = bb_lib_->get(i);
         auto matches = rxn_lib_->match_reactants(*bb.molecule);
-        for (const auto &match : matches) {
-            if (!reactant_matching_config_.check(match)) {
-                continue;
-            }
 #pragma omp critical
-            {
+        {
+            for (const auto &match : matches) {
+                if (!reactant_matching_config_.check(match)) {
+                    continue;
+                }
                 rnt_bb_mapping_.set(bb.index, match.reaction_index, match.reactant_index);
+            }
+
+            count_processed++;
+            if (count_processed % 10000 == 0) {
+                logger()->info("Processed {} building blocks, found {} reactant matches...",
+                               count_processed, rnt_bb_mapping_.num_matches());
             }
         }
     }
@@ -171,16 +180,26 @@ void ChemicalSpace::build_reactant_lists_for_building_blocks() {
 void ChemicalSpace::build_reactant_lists_for_intermediates() {
     logger()->info("Starting to build reactant-intermediate lists...");
     rnt_int_mapping_.init(*rxn_lib_);
+
+    size_t count_processed = 0;
 #pragma omp parallel for schedule(dynamic)
-    for (const auto &intm : *int_lib_) {
+    for (size_t i = 0; i < int_lib_->size(); ++i) {
+        const auto &intm = int_lib_->get(i);
         auto matches = rxn_lib_->match_reactants(*intm.molecule);
-        for (const auto &match : matches) {
-            if (!reactant_matching_config_.check(match)) {
-                continue;
-            }
 #pragma omp critical
-            {
+        {
+            for (const auto &match : matches) {
+                if (!reactant_matching_config_.check(match)) {
+                    continue;
+                }
+
                 rnt_int_mapping_.set(intm.index, match.reaction_index, match.reactant_index);
+            }
+
+            count_processed++;
+            if (count_processed % 10000 == 0) {
+                logger()->info("Processed {} intermediates, found {} reactant matches...",
+                               count_processed, rnt_int_mapping_.num_matches());
             }
         }
     }

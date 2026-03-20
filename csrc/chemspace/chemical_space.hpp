@@ -67,12 +67,18 @@ private:
 public:
     ChemicalSpace(std::unique_ptr<BuildingBlockLibrary> bb_lib,
                   std::unique_ptr<ReactionLibrary> rxn_lib,
-                  std::unique_ptr<IntermediateLibrary> int_lib,
+                  std::unique_ptr<IntermediateLibrary> int_lib = nullptr,
                   const ReactantMatchingConfig &matching_config = {})
         : bb_lib_(std::move(bb_lib)), rxn_lib_(std::move(rxn_lib)), int_lib_(std::move(int_lib)),
           reactant_matching_config_(matching_config) {
-        if (bb_lib_ == nullptr || rxn_lib_ == nullptr || int_lib_ == nullptr) {
-            throw std::invalid_argument("null pointer not allowed");
+        if (bb_lib_ == nullptr) {
+            throw std::invalid_argument("null pointer for building block library");
+        }
+        if (rxn_lib_ == nullptr) {
+            throw std::invalid_argument("null pointer for reaction library");
+        }
+        if (int_lib_ == nullptr) {
+            int_lib_ = std::make_unique<IntermediateLibrary>();
         }
         rnt_bb_mapping_.init(*rxn_lib_);
         rnt_int_mapping_.init(*rxn_lib_);

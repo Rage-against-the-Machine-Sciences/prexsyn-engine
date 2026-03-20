@@ -1,7 +1,11 @@
 #include "bind.hpp"
 
+#include <filesystem>
+#include <fstream>
+#include <iostream>
 #include <memory>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 
 #include <pybind11/native_enum.h>
@@ -18,6 +22,36 @@
 
 namespace py = pybind11;
 using namespace prexsyn::chemspace;
+
+template <typename T> static py::bytes serialize_to_bytes(const T &obj) {
+    std::stringstream ss;
+    obj.serialize(ss);
+    return {ss.str()};
+}
+
+template <typename T> static std::unique_ptr<T> deserialize_from_bytes(const py::bytes &data) {
+    std::string raw(data);
+    std::stringstream ss(raw);
+    return T::deserialize(ss);
+}
+
+template <typename T>
+static void serialize_to_file(const T &obj, const std::filesystem::path &path) {
+    std::ofstream ofs(path, std::ios::binary);
+    if (!ofs) {
+        throw std::runtime_error("failed to open file for writing: " + path.string());
+    }
+    obj.serialize(ofs);
+}
+
+template <typename T>
+static std::unique_ptr<T> deserialize_from_file(const std::filesystem::path &path) {
+    std::ifstream ifs(path, std::ios::binary);
+    if (!ifs) {
+        throw std::runtime_error("failed to open file for reading: " + path.string());
+    }
+    return T::deserialize(ifs);
+}
 
 static void def_postfix_notation(py::module &m) {
     py::native_enum<PostfixNotation::Token::Type>(m, "PostfixNotationTokenType", "enum.Enum")
@@ -64,18 +98,10 @@ static void def_bb_lib(py::module &m) {
         .def("get", py::overload_cast<const std::string &>(&BuildingBlockLibrary::get, py::const_),
              py::arg("identifier"), py::return_value_policy::reference_internal)
         .def("add", &BuildingBlockLibrary::add, py::arg("entry"))
-        .def("serialize",
-             [](const BuildingBlockLibrary &bb_lib) {
-                 std::stringstream ss;
-                 bb_lib.serialize(ss);
-                 return py::bytes(ss.str());
-             })
-        .def_static("deserialize",
-                    [](const py::bytes &data) {
-                        std::string raw(data);
-                        std::stringstream ss(raw);
-                        return BuildingBlockLibrary::deserialize(ss);
-                    })
+        .def("serialize", &serialize_to_bytes<BuildingBlockLibrary>)
+        .def_static("deserialize", &deserialize_from_bytes<BuildingBlockLibrary>)
+        .def("serialize", &serialize_to_file<BuildingBlockLibrary>, py::arg("path"))
+        .def_static("deserialize", &deserialize_from_file<BuildingBlockLibrary>, py::arg("path"))
         .def("__len__", &BuildingBlockLibrary::size)
         .def("__getitem__",
              py::overload_cast<BuildingBlockLibrary::Index>(&BuildingBlockLibrary::get, py::const_),
@@ -130,18 +156,10 @@ static void def_rxn_lib(py::module &m) {
              py::arg("name"), py::return_value_policy::reference_internal)
         .def("add", &ReactionLibrary::add, py::arg("entry"))
         .def("match_reactants", &ReactionLibrary::match_reactants, py::arg("molecule"))
-        .def("serialize",
-             [](const ReactionLibrary &rxn_lib) {
-                 std::stringstream ss;
-                 rxn_lib.serialize(ss);
-                 return py::bytes(ss.str());
-             })
-        .def_static("deserialize",
-                    [](const py::bytes &data) {
-                        std::string raw(data);
-                        std::stringstream ss(raw);
-                        return ReactionLibrary::deserialize(ss);
-                    })
+        .def("serialize", &serialize_to_bytes<ReactionLibrary>)
+        .def_static("deserialize", &deserialize_from_bytes<ReactionLibrary>)
+        .def("serialize", &serialize_to_file<ReactionLibrary>, py::arg("path"))
+        .def_static("deserialize", &deserialize_from_file<ReactionLibrary>, py::arg("path"))
         .def("__len__", &ReactionLibrary::size)
         .def("__getitem__",
              py::overload_cast<ReactionLibrary::Index>(&ReactionLibrary::get, py::const_),
@@ -172,18 +190,10 @@ static void def_int_lib(py::module &m) {
              py::arg("identifier"), py::return_value_policy::reference_internal)
         .def("add", &IntermediateLibrary::add, py::arg("entry"))
         .def("clear", &IntermediateLibrary::clear)
-        .def("serialize",
-             [](const IntermediateLibrary &int_lib) {
-                 std::stringstream ss;
-                 int_lib.serialize(ss);
-                 return py::bytes(ss.str());
-             })
-        .def_static("deserialize",
-                    [](const py::bytes &data) {
-                        std::string raw(data);
-                        std::stringstream ss(raw);
-                        return IntermediateLibrary::deserialize(ss);
-                    })
+        .def("serialize", &serialize_to_bytes<IntermediateLibrary>)
+        .def_static("deserialize", &deserialize_from_bytes<IntermediateLibrary>)
+        .def("serialize", &serialize_to_file<IntermediateLibrary>, py::arg("path"))
+        .def_static("deserialize", &deserialize_from_file<IntermediateLibrary>, py::arg("path"))
         .def("__len__", &IntermediateLibrary::size)
         .def("__getitem__",
              py::overload_cast<IntermediateLibrary::Index>(&IntermediateLibrary::get, py::const_),
@@ -213,24 +223,25 @@ static void def_chemical_space(py::module &m) {
                       std::unique_ptr<IntermediateLibrary>, const ReactantMatchingConfig &>(),
              py::arg("bb_lib"), py::arg("rxn_lib"), py::arg("int_lib"),
              py::arg("matching_config") = ReactantMatchingConfig{})
-        .def_static("deserialize",
-                    [](const py::bytes &data) {
-                        std::string raw(data);
-                        std::stringstream ss(raw);
-                        return ChemicalSpace::deserialize(ss);
-                    })
+        .def("serialize", &serialize_to_bytes<ChemicalSpace>)
+        .def_static("deserialize", &deserialize_from_bytes<ChemicalSpace>)
+        .def("serialize", &serialize_to_file<ChemicalSpace>, py::arg("path"))
+        .def_static("deserialize", &deserialize_from_file<ChemicalSpace>, py::arg("path"))
         .def_static("peek",
                     [](const py::bytes &data) {
                         std::string raw(data);
                         std::stringstream ss(raw);
                         return ChemicalSpace::peek(ss);
                     })
-        .def("serialize",
-             [](const ChemicalSpace &chemspace) {
-                 std::stringstream ss;
-                 chemspace.serialize(ss);
-                 return py::bytes(ss.str());
-             })
+        .def_static("peek",
+                    [](const std::filesystem::path &path) {
+                        std::ifstream ifs(path, std::ios::binary);
+                        if (!ifs) {
+                            throw std::runtime_error("failed to open file for reading: " +
+                                                     path.string());
+                        }
+                        return ChemicalSpace::peek(ifs);
+                    })
         .def("bb_lib", &ChemicalSpace::bb_lib, py::return_value_policy::reference_internal)
         .def("rxn_lib", &ChemicalSpace::rxn_lib, py::return_value_policy::reference_internal)
         .def("int_lib", &ChemicalSpace::int_lib, py::return_value_policy::reference_internal)
