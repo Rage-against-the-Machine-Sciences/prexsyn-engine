@@ -66,18 +66,6 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(csv)
 
 FetchContent_Declare(
-    googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_SHALLOW TRUE
-    GIT_TAG v1.17.0)
-# For Windows: Prevent overriding the parent project's compiler/linker settings
-set(gtest_force_shared_crt
-    ON
-    CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
-include(GoogleTest)
-
-FetchContent_Declare(
     pybind11
     GIT_REPOSITORY https://github.com/pybind/pybind11.git
     GIT_SHALLOW TRUE
@@ -112,6 +100,18 @@ endif()
 install(TARGETS prexsyn_engine DESTINATION .)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    FetchContent_Declare(
+        googletest
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        GIT_SHALLOW TRUE
+        GIT_TAG v1.17.0)
+    # For Windows: Prevent overriding the parent project's compiler/linker settings
+    set(gtest_force_shared_crt
+        ON
+        CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(googletest)
+    include(GoogleTest)
+
     enable_testing()
     file(GLOB_RECURSE TEST_SOURCES csrc/*_test.cpp)
     add_executable(tests ${TEST_SOURCES})

@@ -19,6 +19,8 @@ pytest = "*"
 mypy = "*"
 
 numpy = ">=2.4.2,<3"
+click = "*"
+tqdm = "*"
 pre-commit = ">=4.5.1,<5"
 
 [feature.dev-linux-64.dependencies]
