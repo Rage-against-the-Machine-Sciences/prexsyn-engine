@@ -95,7 +95,7 @@ public:
     const auto &column_name_to_index() const { return column_name_to_index_; }
 
     std::unique_ptr<WriteRow<capacity>> new_write_row();
-    void put(std::unique_ptr<WriteRow<capacity>> row);
+    void put(const WriteRow<capacity> &row);
     void get(const ReadBatch &batch);
     void get(const NamedReadBatch &batch);
 };

@@ -27,14 +27,14 @@ std::unique_ptr<WriteRow<capacity>> DataBuffer<capacity>::new_write_row() {
 
 template <size_t capacity>
     requires(capacity > 0)
-void DataBuffer<capacity>::put(std::unique_ptr<WriteRow<capacity>> row) {
+void DataBuffer<capacity>::put(const WriteRow<capacity> &row) {
     empty_sem.acquire();
     {
         std::scoped_lock lock(mutex);
         for (size_t col_index = 0; col_index < columns_.size(); ++col_index) {
             auto &column = columns_[col_index];
             auto span = column.raw_span(write_cursor);
-            std::copy(row->row_data_[col_index].begin(), row->row_data_[col_index].end(),
+            std::copy(row.row_data_[col_index].begin(), row.row_data_[col_index].end(),
                       span.begin());
         }
         write_cursor = (write_cursor + 1) % capacity;

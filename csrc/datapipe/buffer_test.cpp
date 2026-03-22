@@ -41,7 +41,7 @@ void write_row(DataBuffer<kTestCapacity> &buffer, std::array<float, 2> scores, s
     std::copy(scores.begin(), scores.end(), score_span.begin());
     id_span[0] = id;
 
-    buffer.put(std::move(row));
+    buffer.put(*row);
 }
 
 void expect_row(const std::vector<float> &scores, const std::vector<std::int64_t> &ids,

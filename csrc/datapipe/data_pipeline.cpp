@@ -111,7 +111,7 @@ void Worker::run() {
             auto dest_span = data_row->data(name);
             (*fn)(*product, dest_span);
         }
-        owner_.buffer_->put(std::move(data_row));
+        owner_.buffer_->put(*data_row);
     }
 }
 
