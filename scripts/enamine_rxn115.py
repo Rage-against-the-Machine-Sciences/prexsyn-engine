@@ -1,5 +1,6 @@
-import argparse
 from pathlib import Path
+
+import click
 
 import prexsyn_engine
 
@@ -44,46 +45,53 @@ def create_empty_intermediate_library():
     return int_lib
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Build chemical space for Enamine-Rxn115 dataset"
-    )
-    parser.add_argument(
-        "--force",
-        action="store_true",
-        help="Force rebuild of chemical space even if output file exists",
-    )
-    parser.add_argument(
-        "--output",
-        type=str,
-        default=_default_output_path,
-        help=f"Path to save the chemical space (default: {_default_output_path})",
-    )
-    parser.add_argument(
-        "--sdf",
-        type=str,
-        default=_default_sdf_path,
-        help=f"Path to building block SDF file (default: {_default_sdf_path})",
-    )
-    parser.add_argument(
-        "--rxn",
-        type=str,
-        default=_default_rxn_path,
-        help=f"Path to reaction text file (default: {_default_rxn_path})",
-    )
-
-    args = parser.parse_args()
-
-    output_path = Path(args.output)
-    if output_path.exists() and not args.force:
+@click.command()
+@click.option(
+    "--force",
+    is_flag=True,
+    help="Force rebuild of chemical space even if output file exists",
+)
+@click.option(
+    "--output",
+    type=str,
+    default=_default_output_path,
+    help=f"Path to save the chemical space (default: {_default_output_path})",
+)
+@click.option(
+    "--sdf",
+    type=str,
+    default=_default_sdf_path,
+    help=f"Path to building block SDF file (default: {_default_sdf_path})",
+)
+@click.option(
+    "--bb-cache",
+    type=str,
+    default=_default_bb_lib_cache,
+    help=f"Path to building block library cache file (default: {_default_bb_lib_cache})",
+)
+@click.option(
+    "--rxn",
+    type=str,
+    default=_default_rxn_path,
+    help=f"Path to reaction text file (default: {_default_rxn_path})",
+)
+@click.option(
+    "--rxn-cache",
+    type=str,
+    default=_default_rxn_cache,
+    help=f"Path to reaction library cache file (default: {_default_rxn_cache})",
+)
+def main(force, output, sdf, bb_cache, rxn, rxn_cache):
+    output_path = Path(output)
+    if output_path.exists() and not force:
         peek_stats = prexsyn_engine.chemspace.ChemicalSpace.peek(output_path)
         print(f"Chemical space at {output_path} already exists:")
         print("- Number of building blocks:", peek_stats.num_building_blocks)
         print("- Number of reactions:", peek_stats.num_reactions)
         print("- Number of intermediates:", peek_stats.num_intermediates)
     else:
-        bb_lib = load_building_blocks(sdf_path=args.sdf)
-        rxn_lib = load_reactions(rxn_path=args.rxn)
+        bb_lib = load_building_blocks(sdf_path=sdf, cache_path=bb_cache)
+        rxn_lib = load_reactions(rxn_path=rxn, cache_path=rxn_cache)
         int_lib = create_empty_intermediate_library()
 
         cs = prexsyn_engine.chemspace.ChemicalSpace(
@@ -93,3 +101,7 @@ if __name__ == "__main__":
         cs.generate_intermediates()
         cs.build_reactant_lists_for_intermediates()
         cs.serialize(output_path)
+
+
+if __name__ == "__main__":
+    main()
