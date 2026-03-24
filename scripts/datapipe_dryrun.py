@@ -14,7 +14,11 @@ import prexsyn_engine
     default="./data/enamine_rxn115_chemspace.bin",
     help="Path to chemical space cache file",
 )
-def main(cs_path):
+@click.option(
+    "--inspect",
+    is_flag=True,
+)
+def main(cs_path, inspect):
     cs_path = Path(cs_path)
     if not cs_path.exists():
         print(f"Chemical space cache file not found at {cs_path}")
@@ -40,12 +44,16 @@ def main(cs_path):
         datapipe_line.start_workers(list(range(16)))
         for i in tqdm(range(1000)):
             batch = datapipe_line.get(1024)
+            if inspect:
+                for key, data in batch.items():
+                    print(f"{key}: {data.shape}")
+                    print(data)
+                input("Press Enter to continue...")
             del batch
-        input("Data pipeline workers started. Press Enter to stop...")
     except KeyboardInterrupt:
         print("Keyboard interrupt received. Stopping workers...")
-    finally:
-        datapipe_line.stop_workers()
+
+    datapipe_line.stop_workers()
 
 
 if __name__ == "__main__":
