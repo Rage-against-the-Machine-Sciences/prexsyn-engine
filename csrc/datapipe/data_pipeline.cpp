@@ -33,8 +33,7 @@ DataPipeline::DataPipeline(const std::shared_ptr<ChemicalSpace> &cs,
                            const std::map<std::string, std::shared_ptr<MoleculeDescriptor>> &md,
                            const std::map<std::string, std::shared_ptr<SynthesisDescriptor>> &sd,
                            const enumerator::EnumeratorConfig &enumerator_config)
-    : chemical_space_(cs), enumerator_config_(enumerator_config), molecule_descriptors_(md),
-      synthesis_descriptors_(sd),
+    : chemical_space_(cs), enumerator_config_(enumerator_config),
       logger_(create_logger("DataPipeline" + std::to_string(global_pipeline_id_++))) {
     std::vector<ColumnDef> column_defs;
     column_defs.reserve(molecule_descriptors_.size() + synthesis_descriptors_.size());
@@ -44,6 +43,13 @@ DataPipeline::DataPipeline(const std::shared_ptr<ChemicalSpace> &cs,
     }
     for (const auto &[name, descriptor] : synthesis_descriptors_) {
         column_defs.emplace_back(name, descriptor->size(), descriptor->dtype());
+    }
+
+    for (const auto &[name, descriptor] : molecule_descriptors_) {
+        molecule_descriptors_[name] = descriptor;
+    }
+    for (const auto &[name, descriptor] : synthesis_descriptors_) {
+        synthesis_descriptors_[name] = descriptor;
     }
 
     buffer_ = std::make_unique<DataBuffer<8192>>(column_defs);
@@ -100,8 +106,7 @@ DataPipeline::Batch DataPipeline::get(size_t batch_size) {
 Worker::Worker(const DataPipeline &owner, size_t seed)
     : owner_(owner), seed_(seed),
       enumerator_(owner_.chemical_space_, owner_.enumerator_config_, seed),
-      thread_(&Worker::run, this), molecule_descriptors_(owner.molecule_descriptors_),
-      synthesis_descriptors_(owner.synthesis_descriptors_) {
+      thread_(&Worker::run, this) {
     owner_.logger_->info("Worker[seed={}] started", seed);
 }
 
@@ -109,11 +114,11 @@ void Worker::run() {
     while (!thread_.get_stop_token().stop_requested()) {
         auto [synthesis, product] = enumerator_.next_with_product();
         auto data_row = owner_.buffer_->new_write_row();
-        for (const auto &[name, fn] : this->synthesis_descriptors_) {
+        for (const auto &[name, fn] : owner_.synthesis_descriptors_) {
             auto dest_span = data_row->data(name);
             (*fn)(*synthesis, dest_span);
         }
-        for (const auto &[name, fn] : this->molecule_descriptors_) {
+        for (const auto &[name, fn] : owner_.molecule_descriptors_) {
             auto dest_span = data_row->data(name);
             (*fn)(*product, dest_span);
         }

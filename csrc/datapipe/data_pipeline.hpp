@@ -30,8 +30,8 @@ private:
     std::shared_ptr<ChemicalSpace> chemical_space_;
     enumerator::EnumeratorConfig enumerator_config_;
 
-    std::map<std::string, std::shared_ptr<MoleculeDescriptor>> molecule_descriptors_;
-    std::map<std::string, std::shared_ptr<SynthesisDescriptor>> synthesis_descriptors_;
+    std::map<std::string, std::shared_ptr<const MoleculeDescriptor>> molecule_descriptors_;
+    std::map<std::string, std::shared_ptr<const SynthesisDescriptor>> synthesis_descriptors_;
     std::unique_ptr<DataBuffer<8192>> buffer_;
 
     std::shared_ptr<Logger> logger_;
@@ -82,12 +82,6 @@ private:
     const size_t seed_;
     enumerator::RandomEnumerator enumerator_;
     std::jthread thread_;
-
-    // Each worker holds a copy of descriptor generators to avoid potential race condition
-    // Ideally, descriptor generators should be thread-safe and sharable, but we take the safe route
-    // here, and don't assume anything about the thread-safety of descriptor generators.
-    std::map<std::string, std::shared_ptr<MoleculeDescriptor>> molecule_descriptors_;
-    std::map<std::string, std::shared_ptr<SynthesisDescriptor>> synthesis_descriptors_;
 
     Worker(const DataPipeline &owner, size_t seed);
 
