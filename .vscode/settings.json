@@ -1,0 +1,10 @@
+{
+    "clang-format.executable": "./.pixi/envs/dev-linux-64/bin/clang-format",
+    "clangd.path": "./.pixi/envs/dev-linux-64/bin/clangd",
+    "files.watcherExclude": {
+        "**/.*/**": true,
+        "**/third_party/**": true,
+        "**/build/**": true
+    },
+    "python-envs.defaultEnvManager": "ms-python.python:system"
+}

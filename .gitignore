@@ -258,7 +258,7 @@ __marimo__/
 # debug information files
 *.dwo
 
-/.vscode
+# /.vscode
 /data
 /output
 # pixi environments
