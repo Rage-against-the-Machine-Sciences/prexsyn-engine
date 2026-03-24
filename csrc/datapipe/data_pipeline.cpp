@@ -35,6 +35,14 @@ DataPipeline::DataPipeline(const std::shared_ptr<ChemicalSpace> &cs,
                            const enumerator::EnumeratorConfig &enumerator_config)
     : chemical_space_(cs), enumerator_config_(enumerator_config),
       logger_(create_logger("DataPipeline" + std::to_string(global_pipeline_id_++))) {
+
+    for (const auto &[name, descriptor] : md) {
+        molecule_descriptors_.emplace(name, descriptor);
+    }
+    for (const auto &[name, descriptor] : sd) {
+        synthesis_descriptors_.emplace(name, descriptor);
+    }
+
     std::vector<ColumnDef> column_defs;
     column_defs.reserve(molecule_descriptors_.size() + synthesis_descriptors_.size());
 
@@ -43,13 +51,6 @@ DataPipeline::DataPipeline(const std::shared_ptr<ChemicalSpace> &cs,
     }
     for (const auto &[name, descriptor] : synthesis_descriptors_) {
         column_defs.emplace_back(name, descriptor->size(), descriptor->dtype());
-    }
-
-    for (const auto &[name, descriptor] : molecule_descriptors_) {
-        molecule_descriptors_[name] = descriptor;
-    }
-    for (const auto &[name, descriptor] : synthesis_descriptors_) {
-        synthesis_descriptors_[name] = descriptor;
     }
 
     buffer_ = std::make_unique<DataBuffer<8192>>(column_defs);
