@@ -4,7 +4,13 @@ import pytest
 import prexsyn_engine
 
 
-Chem = pytest.importorskip("rdkit.Chem", exc_type=ImportError)
+try:
+    import rdkit.Chem as Chem
+except ImportError:
+    Chem = None
+
+
+requires_rdkit = pytest.mark.skipif(Chem is None, reason="RDKit is not available")
 
 chemistry = prexsyn_engine.chemistry
 Molecule = chemistry.Molecule
@@ -49,6 +55,7 @@ def test_largest_fragment_returns_main_component():
     assert largest.num_heavy_atoms() == 2
 
 
+@requires_rdkit
 def test_from_rdkit_mol_creates_prexsyn_molecule():
     rdk_mol = Chem.MolFromSmiles("CCO")
 
@@ -58,6 +65,7 @@ def test_from_rdkit_mol_creates_prexsyn_molecule():
     assert mol.num_heavy_atoms() == 3
 
 
+@requires_rdkit
 def test_to_rdkit_mol_returns_rdkit_molecule():
     mol = Molecule.from_smiles("CCN")
 
@@ -67,6 +75,7 @@ def test_to_rdkit_mol_returns_rdkit_molecule():
     assert Chem.MolToSmiles(rdk_mol) == "CCN"
 
 
+@requires_rdkit
 def test_rdkit_conversion_roundtrip_preserves_canonical_smiles():
     input_smiles = "OC1=CC=CC=C1"
     canonical_input = Chem.MolToSmiles(Chem.MolFromSmiles(input_smiles))
