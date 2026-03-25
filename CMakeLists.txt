@@ -99,6 +99,10 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 install(TARGETS prexsyn_engine DESTINATION .)
 
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/prexsyn_engine-stubs")
+    install(DIRECTORY prexsyn_engine-stubs DESTINATION .)
+endif()
+
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     FetchContent_Declare(
         googletest
