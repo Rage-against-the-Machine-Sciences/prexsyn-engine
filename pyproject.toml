@@ -13,3 +13,6 @@ cmake.build-type = "Release"
 
 [tool.cibuildwheel]
 build = "*-manylinux_x86_64"
+
+[tool.ruff]
+exclude = ["prexsyn_engine-stubs/*.pyi"]
