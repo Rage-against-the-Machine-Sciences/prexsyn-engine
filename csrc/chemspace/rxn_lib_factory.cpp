@@ -9,6 +9,8 @@
 #include <utility>
 #include <vector>
 
+#include <csv.hpp>
+
 #include "../chemistry/chemistry.hpp"
 #include "../utility/logging.hpp"
 #include "rxn_lib.hpp"
@@ -79,6 +81,57 @@ std::unique_ptr<ReactionLibrary> rxn_lib_from_plain_text(const std::filesystem::
     }
 
     logger()->info("Done. Loaded: {}", rxn_lib->size());
+
+    return rxn_lib;
+}
+
+std::unique_ptr<ReactionLibrary> rxn_lib_from_csv(const std::filesystem::path &path,
+                                                  const ReactionCSVConfig &config,
+                                                  bool ignore_errors) {
+    auto rxn_lib = std::make_unique<ReactionLibrary>();
+
+    csv::CSVReader reader(path.string());
+    logger()->info("Starting to load reactions from CSV: {}", path.string());
+    size_t rowno = 0;
+    for (auto &row : reader) {
+        rowno++;
+        try {
+            std::string smarts, name;
+            if (!row[config.smarts_column].try_get(smarts)) {
+                logger()->warn("Missing SMARTS column at row {}", rowno);
+                continue;
+            }
+            if (!row[config.name_column].try_get(name)) {
+                name = "RXN_" + std::to_string(rowno);
+            }
+
+            std::string reactant_names_str;
+            std::vector<std::string> reactant_names;
+            if (row[config.reactant_name_column].try_get(reactant_names_str)) {
+                size_t start = 0;
+                while (start < reactant_names_str.size()) {
+                    size_t end = reactant_names_str.find(config.reactant_name_delimiter, start);
+                    if (end == std::string::npos) {
+                        end = reactant_names_str.size();
+                    }
+                    reactant_names.push_back(reactant_names_str.substr(start, end - start));
+                    start = end + config.reactant_name_delimiter.size();
+                }
+            }
+
+            std::unique_ptr<Reaction> rxn;
+            if (reactant_names.empty()) {
+                rxn = Reaction::from_smarts(smarts);
+            } else {
+                rxn = Reaction::from_smarts(smarts, reactant_names);
+            }
+        } catch (const ReactionError &e) {
+            logger()->warn("Row {}: {}", rowno, e.what());
+            if (!ignore_errors) {
+                throw;
+            }
+        }
+    }
 
     return rxn_lib;
 }

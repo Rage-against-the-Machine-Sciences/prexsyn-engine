@@ -153,6 +153,16 @@ static void def_rxn_lib(py::module &m) {
 
     m.def("rxn_lib_from_plain_text", &rxn_lib_from_plain_text, py::arg("path"),
           py::arg("ignore_errors") = false);
+
+    py::class_<ReactionCSVConfig>(m, "ReactionCSVConfig")
+        .def(py::init<>())
+        .def_readwrite("name_column", &ReactionCSVConfig::name_column)
+        .def_readwrite("smarts_column", &ReactionCSVConfig::smarts_column)
+        .def_readwrite("reactant_name_column", &ReactionCSVConfig::reactant_name_column)
+        .def_readwrite("reactant_name_delimiter", &ReactionCSVConfig::reactant_name_delimiter);
+
+    m.def("rxn_lib_from_csv", &rxn_lib_from_csv, py::arg("path"),
+          py::arg("config") = ReactionCSVConfig{}, py::arg("ignore_errors") = false);
 }
 
 static void def_int_lib(py::module &m) {
