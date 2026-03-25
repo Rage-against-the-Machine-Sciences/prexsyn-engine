@@ -15,20 +15,16 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - name: Restore third-party deps
-        id: cache-third-party-restore
-        uses: actions/cache/restore@v5
+      - name: Cache third-party deps
+        uses: actions/cache@v5
         with:
-          path: /project/build/scikit-build/_third_party
+          path: .cache/third_party
           key: ${{ runner.os }}-third-party-${{ hashFiles('CMakeLists.txt', 'third_party/boost.sh', 'third_party/rdkit.sh') }}
       - name: Build wheels
         uses: pypa/cibuildwheel@v3.4.0
-      - name: Save third-party deps
-        id: cache-third-party-save
-        uses: actions/cache/save@v5
-        with:
-          path: /project/build/scikit-build/_third_party
-          key: ${{ steps.cache-third-party-restore.outputs.cache-primary-key }}
+        env:
+          CIBW_BEFORE_ALL_LINUX: >-
+            mkdir -p /host${{ github.workspace }}/.cache/third_party && mkdir -p /project/build/scikit-build && rm -rf /project/build/scikit-build/_third_party && ln -s /host${{ github.workspace }}/.cache/third_party /project/build/scikit-build/_third_party
       - uses: actions/upload-artifact@v4
         with:
           name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
