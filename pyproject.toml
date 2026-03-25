@@ -13,6 +13,8 @@ cmake.build-type = "Release"
 
 [tool.cibuildwheel]
 build = "*-manylinux_x86_64"
+test-requires = ["pytest", "rdkit"]
+test-command = "pytest {project}/tests"
 
 [tool.ruff]
 exclude = ["prexsyn_engine-stubs/*.pyi"]
