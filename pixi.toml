@@ -18,6 +18,7 @@ patchelf = "*"
 pytest = "*"
 mypy = "*"
 pre-commit = ">=4.5.1,<5"
+bump-my-version = "*"
 
 [pypi-dependencies]
 numpy = ">=2.4.2,<3"
