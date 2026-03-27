@@ -41,6 +41,8 @@ serialize = [
     "{major}.{minor}.{patch}.{pre_l}{pre_n}",
     "{major}.{minor}.{patch}",
 ]
+commit = true
+message = "Bump version: {current_version} -> {new_version}"
 
 [tool.bumpversion.parts.pre_l]
 values = ["dev", "final"]
