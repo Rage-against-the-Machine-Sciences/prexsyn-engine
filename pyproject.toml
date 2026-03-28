@@ -6,6 +6,10 @@ authors = [{ name = "Shitong Luo", email = "luost26@gmail.com" }]
 readme = "README.md"
 license-files = ["LICENSE"]
 
+[project.urls]
+homepage = "https://github.com/luost26/prexsyn-engine"
+documentation = "https://prexsyn.readthedocs.io/"
+
 [build-system]
 requires = ["scikit-build-core"]
 build-backend = "scikit_build_core.build"
@@ -37,6 +41,8 @@ serialize = [
     "{major}.{minor}.{patch}.{pre_l}{pre_n}",
     "{major}.{minor}.{patch}",
 ]
+commit = true
+message = "Bump version: {current_version} -> {new_version}"
 
 [tool.bumpversion.parts.pre_l]
 values = ["dev", "final"]
