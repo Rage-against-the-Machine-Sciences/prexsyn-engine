@@ -102,7 +102,7 @@ def test_multithreaded_detokenizer_batch_decodes_each_item():
     batch_tokens = np.stack([tokens, tokens], axis=0)
 
     mt_detok = detokenizer.MultiThreadedDetokenizer(cs, token_def)
-    outputs = mt_detok(2, batch_tokens)
+    outputs = mt_detok(batch_tokens)
 
     assert len(outputs) == 2
     for syn in outputs:
@@ -119,7 +119,7 @@ def test_multithreaded_detokenizer_raises_for_invalid_shape():
     mt_detok = detokenizer.MultiThreadedDetokenizer(cs, token_def)
 
     with pytest.raises((ValueError, RuntimeError), match="3D array"):
-        mt_detok(2, bad_batch)
+        mt_detok(bad_batch)
 
 
 def test_detokenize_then_tokenize_round_trip_is_consistent():
@@ -145,7 +145,7 @@ def test_multithreaded_detokenize_then_tokenize_round_trip_is_consistent():
     batch_tokens = np.stack([input_tokens, input_tokens], axis=0)
 
     mt_detok = detokenizer.MultiThreadedDetokenizer(cs, token_def)
-    syntheses = mt_detok(2, batch_tokens)
+    syntheses = mt_detok(batch_tokens)
     tokenizer = descriptor.SynthesisPostfixNotation.create(token_def, max_length=8)
 
     for syn in syntheses:
@@ -185,7 +185,7 @@ def test_tokenize_then_multithreaded_detokenize_round_trip_is_consistent():
     batch_tokens = np.stack([input_tokens, input_tokens], axis=0)
 
     mt_detok = detokenizer.MultiThreadedDetokenizer(cs, token_def)
-    output_syntheses = mt_detok(2, batch_tokens)
+    output_syntheses = mt_detok(batch_tokens)
 
     assert len(output_syntheses) == 2
     for syn in output_syntheses:
