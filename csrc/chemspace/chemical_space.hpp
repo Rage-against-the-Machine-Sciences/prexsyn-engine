@@ -65,6 +65,8 @@ private:
     ReactantLists rnt_bb_mapping_, rnt_int_mapping_;
 
 public:
+    static constexpr int kCurrentSerializationVersion = 1;
+
     ChemicalSpace(std::unique_ptr<BuildingBlockLibrary> bb_lib,
                   std::unique_ptr<ReactionLibrary> rxn_lib,
                   std::unique_ptr<IntermediateLibrary> int_lib = nullptr,
