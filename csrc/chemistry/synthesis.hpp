@@ -25,6 +25,7 @@ private:
         std::vector<size_t> precursor_item_indices;
     };
 
+    size_t index_{};
     std::vector<Item> items_;
     std::shared_ptr<Reaction> reaction_;
     std::vector<std::shared_ptr<SynthesisNode>> precursor_nodes_;
@@ -32,14 +33,16 @@ private:
     SynthesisNode() = default;
 
 public:
-    static std::unique_ptr<SynthesisNode> from_molecule(const std::shared_ptr<Molecule> &);
+    static std::unique_ptr<SynthesisNode> from_molecule(size_t index,
+                                                        const std::shared_ptr<Molecule> &);
     static std::unique_ptr<SynthesisNode>
-    from_reaction(const std::shared_ptr<Reaction> &,
+    from_reaction(size_t index, const std::shared_ptr<Reaction> &,
                   const std::vector<std::shared_ptr<SynthesisNode>> &);
 
     void add_reaction_outcome(const ReactionOutcomeWithReactantAssignment &outcome,
                               const std::vector<size_t> &precursor_item_indices);
 
+    size_t index() const { return index_; }
     size_t size() const { return items_.size(); }
     const auto &precursor_nodes() const { return precursor_nodes_; }
     const std::shared_ptr<Molecule> &at(size_t i) const { return items_.at(i).molecule; }

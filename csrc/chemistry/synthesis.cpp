@@ -14,16 +14,19 @@
 
 namespace prexsyn {
 
-std::unique_ptr<SynthesisNode> SynthesisNode::from_molecule(const std::shared_ptr<Molecule> &mol) {
+std::unique_ptr<SynthesisNode> SynthesisNode::from_molecule(size_t index,
+                                                            const std::shared_ptr<Molecule> &mol) {
     std::unique_ptr<SynthesisNode> node{new SynthesisNode()};
+    node->index_ = index;
     node->items_.push_back({mol, {}, {}});
     return node;
 }
 
 std::unique_ptr<SynthesisNode>
-SynthesisNode::from_reaction(const std::shared_ptr<Reaction> &rxn,
+SynthesisNode::from_reaction(size_t index, const std::shared_ptr<Reaction> &rxn,
                              const std::vector<std::shared_ptr<SynthesisNode>> &prec) {
     std::unique_ptr<SynthesisNode> node{new SynthesisNode()};
+    node->index_ = index;
     node->reaction_ = rxn;
     node->precursor_nodes_ = prec;
     return node;
@@ -60,7 +63,8 @@ const std::shared_ptr<SynthesisNode> &Synthesis::stack_top(size_t i) const {
 }
 
 void Synthesis::push(const std::shared_ptr<Molecule> &molecule) {
-    nodes_.push_back(SynthesisNode::from_molecule(molecule));
+    auto new_index = nodes_.size();
+    nodes_.push_back(SynthesisNode::from_molecule(new_index, molecule));
     stack_.push_back(nodes_.back());
 }
 
@@ -104,7 +108,8 @@ void Synthesis::push(const std::shared_ptr<Reaction> &reaction,
         sizes.push_back(node->size());
     }
 
-    auto new_node = SynthesisNode::from_reaction(reaction, precursor_nodes);
+    auto new_index = nodes_.size();
+    auto new_node = SynthesisNode::from_reaction(new_index, reaction, precursor_nodes);
     cartesian_product(sizes, [&](const std::vector<size_t> &item_indices) -> bool {
         std::vector<std::shared_ptr<Molecule>> reactants;
         reactants.reserve(precursor_nodes.size());
