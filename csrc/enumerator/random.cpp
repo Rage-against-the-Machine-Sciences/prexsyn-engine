@@ -46,7 +46,7 @@ bool RandomEnumerator::not_growable() const {
 void RandomEnumerator::clear_synthesis() { synthesis_.reset(); }
 
 void RandomEnumerator::init_synthesis() {
-    synthesis_ = std::make_unique<chemspace::Synthesis>(*cs_);
+    synthesis_ = cs_->new_synthesis();
 
     auto num_bb = cs_->bb_lib().size();
     std::uniform_int_distribution<size_t> dist(0, num_bb - 1);

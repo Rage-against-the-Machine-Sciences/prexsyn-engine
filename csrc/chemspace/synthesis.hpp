@@ -22,10 +22,12 @@ private:
     PostfixNotation postfix_notation_;
     std::shared_ptr<Synthesis> synthesis_;
 
-public:
     ChemicalSpaceSynthesis(const ChemicalSpace &cs)
         : cs_(cs), postfix_notation_(), synthesis_(std::make_shared<Synthesis>()) {}
 
+    friend class ChemicalSpace;
+
+public:
     const PostfixNotation &postfix_notation() const { return postfix_notation_; }
     const Synthesis &synthesis() const { return *synthesis_; }
     std::shared_ptr<Synthesis> &get_synthesis() { return synthesis_; }

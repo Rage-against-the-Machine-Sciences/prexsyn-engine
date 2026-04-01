@@ -254,7 +254,7 @@ static void def_chemical_space(py::module &m) {
                  chemspace.print_reactant_lists(oss);
                  return oss.str();
              })
-        .def("new_synthesis", &ChemicalSpace::new_synthesis);
+        .def("new_synthesis", &ChemicalSpace::new_synthesis, py::keep_alive<0, 1>());
 }
 
 static void def_chemical_space_synthesis(py::module &m) {

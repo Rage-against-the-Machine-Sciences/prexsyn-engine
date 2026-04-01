@@ -271,7 +271,7 @@ void ChemicalSpace::print_reactant_lists(std::ostream &os) const {
 }
 
 std::unique_ptr<ChemicalSpaceSynthesis> ChemicalSpace::new_synthesis() const {
-    return std::make_unique<ChemicalSpaceSynthesis>(*this);
+    return std::unique_ptr<ChemicalSpaceSynthesis>(new ChemicalSpaceSynthesis(*this));
 }
 
 } // namespace prexsyn::chemspace
