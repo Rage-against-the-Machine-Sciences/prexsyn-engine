@@ -37,6 +37,10 @@ size_t ChemicalSpaceSynthesis::count_reactions() const {
 }
 
 std::vector<std::shared_ptr<Molecule>> ChemicalSpaceSynthesis::products() const {
+    const static std::vector<std::shared_ptr<Molecule>> empty_result{};
+    if (synthesis_->stack_size() == 0) {
+        return empty_result;
+    }
     const auto &top = synthesis_->stack_top();
     std::vector<std::shared_ptr<Molecule>> result;
     result.reserve(top->size());

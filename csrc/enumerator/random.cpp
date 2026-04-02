@@ -100,6 +100,7 @@ void RandomEnumerator::grow_synthesis() {
         }
     }
 
+    // add_reaction returns failure if there's no products produced
     result = synthesis_->add_reaction(match.reaction_index, config_.max_outcomes_per_reaction);
     if (!result) {
         clear_synthesis();
