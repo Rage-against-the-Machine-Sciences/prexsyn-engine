@@ -57,7 +57,9 @@ void def_module_detokenizer(pybind11::module &m) {
              py::arg("max_outcomes_per_reaction") = std::nullopt)
         .def(
             "__call__",
-            [](const MultiThreadedDetokenizer &detok, size_t batch_size,
-               const TokenNumPyArray &tokens) { return detok(batch_size, batch_as_span(tokens)); },
-            py::arg("batch_size"), py::arg("tokens"));
+            [](const MultiThreadedDetokenizer &detok, const TokenNumPyArray &tokens) {
+                auto batch_size = static_cast<size_t>(tokens.shape(0));
+                return detok(batch_size, batch_as_span(tokens));
+            },
+            py::arg("tokens"));
 }

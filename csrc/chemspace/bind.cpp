@@ -20,6 +20,7 @@
 #include <pybind11/detail/using_smart_holder.h>
 #include <pyerrors.h>
 
+#include "../utility/serialization.hpp"
 #include "chemspace.hpp"
 
 namespace py = pybind11;
@@ -61,6 +62,22 @@ static void def_postfix_notation(py::module &m) {
         .def("append", &PostfixNotation::append, py::arg("index"), py::arg("type"))
         .def("extend", &PostfixNotation::extend, py::arg("tokens"))
         .def("pop_back", &PostfixNotation::pop_back)
+        .def(py::pickle(
+            [](const PostfixNotation &pn) {
+                std::stringstream ss;
+                boost::archive::binary_oarchive oa(ss);
+                oa << pn;
+                std::string pickle_str = ss.str();
+                return py::bytes(pickle_str);
+            },
+            [](const py::bytes &pickle) {
+                std::string pickle_str(pickle);
+                std::stringstream ss(pickle_str);
+                boost::archive::binary_iarchive ia(ss);
+                PostfixNotation pn;
+                ia >> pn;
+                return pn;
+            }))
         .def("__repr__", [](const PostfixNotation &pn) {
             std::ostringstream oss;
             oss << pn;
@@ -254,7 +271,7 @@ static void def_chemical_space(py::module &m) {
                  chemspace.print_reactant_lists(oss);
                  return oss.str();
              })
-        .def("new_synthesis", &ChemicalSpace::new_synthesis);
+        .def("new_synthesis", &ChemicalSpace::new_synthesis, py::keep_alive<0, 1>());
 }
 
 static void def_chemical_space_synthesis(py::module &m) {
@@ -269,6 +286,21 @@ static void def_chemical_space_synthesis(py::module &m) {
         });
 
     py::class_<ChemicalSpaceSynthesis, py::smart_holder>(m, "Synthesis")
+        .def("serialize",
+             [](const ChemicalSpaceSynthesis &synthesis) {
+                 std::stringstream ss;
+                 synthesis.serialize(ss);
+                 return py::bytes(ss.str());
+             })
+        .def_static(
+            "deserialize",
+            [](const py::bytes &data, const ChemicalSpace &chemspace,
+               std::optional<size_t> max_outcomes) {
+                std::string raw(data);
+                std::stringstream ss(raw);
+                return ChemicalSpaceSynthesis::deserialize(ss, chemspace, max_outcomes);
+            },
+            py::arg("data"), py::arg("chemspace"), py::arg("max_outcomes"))
         .def("postfix_notation", &ChemicalSpaceSynthesis::postfix_notation,
              py::return_value_policy::reference_internal)
         .def("synthesis", &ChemicalSpaceSynthesis::synthesis,

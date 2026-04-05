@@ -47,6 +47,14 @@ void ReactantLists::set(MolIndex bb, ReactionLibrary::Index rxn, Reaction::React
 
 std::unique_ptr<ChemicalSpace> ChemicalSpace::deserialize(std::istream &is) {
     logger()->info("Deserializing chemical space...");
+
+    auto vtag = SerializationVersionTag::read(is);
+    if (vtag != 1) {
+        throw std::runtime_error("unsupported chemical space serialization version: " +
+                                 std::to_string(vtag));
+    }
+    logger()->info(" - Serialization version: {}", static_cast<int>(vtag));
+
     {
         boost::archive::binary_iarchive ia(is);
         size_t bb_lib_size = 0, rxn_lib_size = 0, int_lib_size = 0;
@@ -83,6 +91,12 @@ std::unique_ptr<ChemicalSpace> ChemicalSpace::deserialize(std::istream &is) {
 }
 
 ChemicalSpace::PeekStats ChemicalSpace::peek(std::istream &is) {
+    auto vtag = SerializationVersionTag::read(is);
+    if (vtag != 1) {
+        throw std::runtime_error("unsupported chemical space serialization version: " +
+                                 std::to_string(vtag));
+    }
+
     boost::archive::binary_iarchive ia(is);
     PeekStats stats;
     ia >> stats.num_building_blocks >> stats.num_reactions >> stats.num_intermediates;
@@ -90,6 +104,8 @@ ChemicalSpace::PeekStats ChemicalSpace::peek(std::istream &is) {
 }
 
 void ChemicalSpace::serialize(std::ostream &os) const {
+    SerializationVersionTag(kCurrentSerializationVersion).write(os);
+
     {
         // For peeking
         boost::archive::binary_oarchive oa(os);
@@ -255,7 +271,7 @@ void ChemicalSpace::print_reactant_lists(std::ostream &os) const {
 }
 
 std::unique_ptr<ChemicalSpaceSynthesis> ChemicalSpace::new_synthesis() const {
-    return std::make_unique<ChemicalSpaceSynthesis>(*this);
+    return std::unique_ptr<ChemicalSpaceSynthesis>(new ChemicalSpaceSynthesis(*this));
 }
 
 } // namespace prexsyn::chemspace

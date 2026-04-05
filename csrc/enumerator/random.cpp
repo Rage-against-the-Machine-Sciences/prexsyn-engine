@@ -46,7 +46,7 @@ bool RandomEnumerator::not_growable() const {
 void RandomEnumerator::clear_synthesis() { synthesis_.reset(); }
 
 void RandomEnumerator::init_synthesis() {
-    synthesis_ = std::make_unique<chemspace::Synthesis>(*cs_);
+    synthesis_ = cs_->new_synthesis();
 
     auto num_bb = cs_->bb_lib().size();
     std::uniform_int_distribution<size_t> dist(0, num_bb - 1);
@@ -82,6 +82,12 @@ void RandomEnumerator::grow_synthesis() {
         }
         const auto &rlist_bb = cs_->building_block_reactant_lists().get(match.reaction_index, i);
         const auto &rlist_int = cs_->intermediate_reactant_lists().get(match.reaction_index, i);
+        if (rlist_bb.empty() && rlist_int.empty()) {
+            // No possible reactants for this slot, so this reaction can't be applied
+            clear_synthesis();
+            return;
+        }
+
         const auto &[choice, index] = random_choice(rlist_bb, rlist_int, rng_);
         if (choice == which_vector::first) {
             result = synthesis_->add_building_block(index);
@@ -94,6 +100,7 @@ void RandomEnumerator::grow_synthesis() {
         }
     }
 
+    // add_reaction returns failure if there's no products produced
     result = synthesis_->add_reaction(match.reaction_index, config_.max_outcomes_per_reaction);
     if (!result) {
         clear_synthesis();

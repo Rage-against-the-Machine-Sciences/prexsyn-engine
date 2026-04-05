@@ -1,8 +1,10 @@
 #pragma once
 
 #include <cstddef>
+#include <istream>
 #include <memory>
 #include <optional>
+#include <ostream>
 #include <string>
 #include <vector>
 
@@ -22,9 +24,15 @@ private:
     PostfixNotation postfix_notation_;
     std::shared_ptr<Synthesis> synthesis_;
 
-public:
     ChemicalSpaceSynthesis(const ChemicalSpace &cs)
         : cs_(cs), postfix_notation_(), synthesis_(std::make_shared<Synthesis>()) {}
+
+    friend class ChemicalSpace;
+
+public:
+    void serialize(std::ostream &) const;
+    static std::unique_ptr<ChemicalSpaceSynthesis>
+    deserialize(std::istream &, const ChemicalSpace &, std::optional<size_t> max_outcomes);
 
     const PostfixNotation &postfix_notation() const { return postfix_notation_; }
     const Synthesis &synthesis() const { return *synthesis_; }

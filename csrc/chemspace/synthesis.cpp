@@ -2,12 +2,16 @@
 
 #include <cstddef>
 #include <exception>
+#include <istream>
 #include <memory>
 #include <optional>
+#include <ostream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
 #include "../chemistry/chemistry.hpp"
+#include "../utility/serialization.hpp"
 #include "bb_lib.hpp"
 #include "chemical_space.hpp"
 #include "int_lib.hpp"
@@ -15,6 +19,27 @@
 #include "rxn_lib.hpp"
 
 namespace prexsyn::chemspace {
+
+void ChemicalSpaceSynthesis::serialize(std::ostream &os) const {
+    boost::archive::binary_oarchive oa(os);
+    oa << postfix_notation_;
+}
+
+std::unique_ptr<ChemicalSpaceSynthesis>
+ChemicalSpaceSynthesis::deserialize(std::istream &is, const ChemicalSpace &cs,
+                                    std::optional<size_t> max_outcomes) {
+    std::unique_ptr<ChemicalSpaceSynthesis> result{new ChemicalSpaceSynthesis(cs)};
+    boost::archive::binary_iarchive ia(is);
+    PostfixNotation pn;
+    ia >> pn;
+    auto recons_result = result->add_postfix_notation(pn, max_outcomes);
+    if (!recons_result) {
+        throw std::runtime_error(
+            "failed to deserialize synthesis, did you provide the same chemical space? " +
+            recons_result.message);
+    }
+    return result;
+}
 
 size_t ChemicalSpaceSynthesis::count_building_blocks() const {
     size_t count = 0;
@@ -37,6 +62,10 @@ size_t ChemicalSpaceSynthesis::count_reactions() const {
 }
 
 std::vector<std::shared_ptr<Molecule>> ChemicalSpaceSynthesis::products() const {
+    const static std::vector<std::shared_ptr<Molecule>> empty_result{};
+    if (synthesis_->stack_size() == 0) {
+        return empty_result;
+    }
     const auto &top = synthesis_->stack_top();
     std::vector<std::shared_ptr<Molecule>> result;
     result.reserve(top->size());
