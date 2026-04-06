@@ -1,4 +1,5 @@
 import tempfile
+import pickle
 from pathlib import Path
 
 import pytest
@@ -42,6 +43,21 @@ def test_postfix_notation_invalid_type_raises():
 
     with pytest.raises(TypeError):
         pfn.append(1, 99)
+
+
+def test_postfix_notation_pickle_roundtrip():
+    pfn = chemspace.PostfixNotation()
+    pfn.append(11, chemspace.PostfixNotationTokenType.BuildingBlock)
+    pfn.append(7, chemspace.PostfixNotationTokenType.Reaction)
+
+    restored = pickle.loads(pickle.dumps(pfn))
+
+    original_tokens = pfn.tokens()
+    restored_tokens = restored.tokens()
+    assert len(restored_tokens) == len(original_tokens)
+    for original, cloned in zip(original_tokens, restored_tokens):
+        assert cloned.index == original.index
+        assert cloned.type == original.type
 
 
 def test_building_block_library_add_get_and_serde_roundtrip():
@@ -186,3 +202,25 @@ def test_chemspace_synthesis_add_building_block_accepts_int_and_string():
     assert by_name.is_ok
     assert by_index.is_ok
     assert syn.count_building_blocks() == 2
+
+
+def test_chemspace_synthesis_serialize_deserialize_roundtrip():
+    bb_lib = chemspace.bb_lib_from_sdf(resource_path("bb.sdf"))
+    rxn_lib = chemspace.rxn_lib_from_plain_text(resource_path("rxn.txt"))
+    int_lib = chemspace.IntermediateLibrary()
+    cs = chemspace.ChemicalSpace(bb_lib, rxn_lib, int_lib)
+
+    syn = cs.new_synthesis()
+    assert syn.add_building_block("EN300-250786").is_ok
+    assert syn.add_building_block("EN300-101318").is_ok
+    assert syn.add_reaction("ReactionA", None).is_ok
+
+    payload = syn.serialize()
+    restored = chemspace.Synthesis.deserialize(payload, cs, None)
+
+    assert isinstance(payload, bytes)
+    assert len(payload) > 0
+    assert restored.count_building_blocks() == syn.count_building_blocks()
+    assert restored.count_reactions() == syn.count_reactions()
+    assert len(restored.products()) == len(syn.products())
+    assert restored.products()[0].smiles() == syn.products()[0].smiles()
