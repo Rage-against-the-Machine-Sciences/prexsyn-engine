@@ -52,6 +52,20 @@ std::shared_ptr<Molecule> ReactionOutcome::main_product() const {
     return *max_it;
 }
 
+std::string ReactionOutcome::dedup_key() const {
+    std::vector<std::string> product_smiles;
+    product_smiles.reserve(products.size());
+    for (const auto &prod : products) {
+        product_smiles.push_back(prod->smiles());
+    }
+    std::sort(product_smiles.begin(), product_smiles.end());
+    std::stringstream key_ss;
+    for (const auto &smiles : product_smiles) {
+        key_ss << smiles << ".";
+    }
+    return key_ss.str();
+}
+
 std::unique_ptr<Reaction> Reaction::from_smarts(const std::string &smarts,
                                                 const std::vector<std::string> &reactant_names) {
     try {

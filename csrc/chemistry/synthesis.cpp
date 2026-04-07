@@ -5,6 +5,7 @@
 #include <memory>
 #include <optional>
 #include <ranges>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -34,6 +35,16 @@ SynthesisNode::from_reaction(size_t index, const std::shared_ptr<Reaction> &rxn,
 
 void SynthesisNode::add_reaction_outcome(const ReactionOutcomeWithReactantAssignment &outcome,
                                          const std::vector<size_t> &precursor_item_indices) {
+    std::stringstream key_ss;
+    key_ss << outcome.dedup_key() << "|";
+    for (const auto &name : outcome.reactant_names) {
+        key_ss << name << ".";
+    }
+    const auto dedup_key = key_ss.str();
+    if (dedup_keys_.contains(dedup_key)) {
+        return;
+    }
+    dedup_keys_.insert(dedup_key);
     items_.push_back({outcome.main_product(), outcome.reactant_names, precursor_item_indices});
 }
 

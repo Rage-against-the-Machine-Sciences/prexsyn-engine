@@ -25,6 +25,7 @@ struct ReactionOutcome {
     bool empty() const { return products.empty(); }
     size_t num_products() const { return products.size(); }
     std::shared_ptr<Molecule> main_product() const;
+    std::string dedup_key() const;
 };
 
 struct ReactionOutcomeWithReactantAssignment : public ReactionOutcome {
