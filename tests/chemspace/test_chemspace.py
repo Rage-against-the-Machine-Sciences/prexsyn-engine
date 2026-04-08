@@ -216,7 +216,7 @@ def test_chemspace_synthesis_serialize_deserialize_roundtrip():
     assert syn.add_reaction("ReactionA", None).is_ok
 
     payload = syn.serialize()
-    restored = chemspace.Synthesis.deserialize(payload, cs, None)
+    restored = chemspace.Synthesis.deserialize(payload, cs)
 
     assert isinstance(payload, bytes)
     assert len(payload) > 0

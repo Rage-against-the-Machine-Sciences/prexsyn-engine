@@ -299,13 +299,12 @@ static void def_chemical_space_synthesis(py::module &m) {
              })
         .def_static(
             "deserialize",
-            [](const py::bytes &data, const ChemicalSpace &chemspace,
-               std::optional<size_t> max_outcomes) {
+            [](const py::bytes &data, const ChemicalSpace &chemspace) {
                 std::string raw(data);
                 std::stringstream ss(raw);
-                return ChemicalSpaceSynthesis::deserialize(ss, chemspace, max_outcomes);
+                return ChemicalSpaceSynthesis::deserialize(ss, chemspace);
             },
-            py::arg("data"), py::arg("chemspace"), py::arg("max_outcomes"))
+            py::arg("data"), py::arg("chemspace"))
         .def("chemical_space", &ChemicalSpaceSynthesis::chemical_space,
              py::return_value_policy::reference_internal)
         .def("postfix_notation", &ChemicalSpaceSynthesis::postfix_notation,
