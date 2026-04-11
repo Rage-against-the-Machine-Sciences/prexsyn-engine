@@ -167,7 +167,9 @@ static void def_rxn_lib(py::module &m) {
         .def("__getitem__",
              py::overload_cast<ReactionLibrary::Index>(&ReactionLibrary::get, py::const_),
              py::return_value_policy::reference_internal);
+}
 
+static void def_rxn_lib_factory(py::module &m) {
     m.def("rxn_lib_from_plain_text", &rxn_lib_from_plain_text, py::arg("path"),
           py::arg("ignore_errors") = false);
 
@@ -180,6 +182,9 @@ static void def_rxn_lib(py::module &m) {
 
     m.def("rxn_lib_from_csv", &rxn_lib_from_csv, py::arg("path"),
           py::arg("config") = ReactionCSVConfig{}, py::arg("ignore_errors") = false);
+
+    m.def("rxn_lib_from_json", &rxn_lib_from_json, py::arg("path"),
+          py::arg("ignore_errors") = false);
 }
 
 static void def_int_lib(py::module &m) {
@@ -294,13 +299,14 @@ static void def_chemical_space_synthesis(py::module &m) {
              })
         .def_static(
             "deserialize",
-            [](const py::bytes &data, const ChemicalSpace &chemspace,
-               std::optional<size_t> max_outcomes) {
+            [](const py::bytes &data, const ChemicalSpace &chemspace) {
                 std::string raw(data);
                 std::stringstream ss(raw);
-                return ChemicalSpaceSynthesis::deserialize(ss, chemspace, max_outcomes);
+                return ChemicalSpaceSynthesis::deserialize(ss, chemspace);
             },
-            py::arg("data"), py::arg("chemspace"), py::arg("max_outcomes"))
+            py::arg("data"), py::arg("chemspace"))
+        .def("chemical_space", &ChemicalSpaceSynthesis::chemical_space,
+             py::return_value_policy::reference_internal)
         .def("postfix_notation", &ChemicalSpaceSynthesis::postfix_notation,
              py::return_value_policy::reference_internal)
         .def("synthesis", &ChemicalSpaceSynthesis::synthesis,
@@ -340,6 +346,7 @@ void def_module_chemspace(pybind11::module &m) {
     def_postfix_notation(m);
     def_bb_lib(m);
     def_rxn_lib(m);
+    def_rxn_lib_factory(m);
     def_int_lib(m);
     def_chemical_space(m);
     def_chemical_space_synthesis(m);

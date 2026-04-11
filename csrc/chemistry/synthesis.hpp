@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <memory>
 #include <optional>
+#include <set>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -29,6 +30,7 @@ private:
     std::vector<Item> items_;
     std::shared_ptr<Reaction> reaction_;
     std::vector<std::shared_ptr<SynthesisNode>> precursor_nodes_;
+    std::set<std::string> dedup_keys_;
 
     SynthesisNode() = default;
 

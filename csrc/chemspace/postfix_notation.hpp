@@ -28,6 +28,7 @@ public:
         ar & tokens_;
     }
 
+    size_t size() const { return tokens_.size(); }
     const std::vector<Token> &tokens() const { return tokens_; }
 
     void append(size_t index, Token::Type type) {

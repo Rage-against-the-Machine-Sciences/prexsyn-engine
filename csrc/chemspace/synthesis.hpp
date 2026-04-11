@@ -24,6 +24,8 @@ private:
     PostfixNotation postfix_notation_;
     std::shared_ptr<Synthesis> synthesis_;
 
+    std::vector<std::optional<size_t>> max_outcomes_history_;
+
     ChemicalSpaceSynthesis(const ChemicalSpace &cs)
         : cs_(cs), postfix_notation_(), synthesis_(std::make_shared<Synthesis>()) {}
 
@@ -31,9 +33,10 @@ private:
 
 public:
     void serialize(std::ostream &) const;
-    static std::unique_ptr<ChemicalSpaceSynthesis>
-    deserialize(std::istream &, const ChemicalSpace &, std::optional<size_t> max_outcomes);
+    static std::unique_ptr<ChemicalSpaceSynthesis> deserialize(std::istream &,
+                                                               const ChemicalSpace &);
 
+    const ChemicalSpace &chemical_space() const { return cs_; }
     const PostfixNotation &postfix_notation() const { return postfix_notation_; }
     const Synthesis &synthesis() const { return *synthesis_; }
     std::shared_ptr<Synthesis> &get_synthesis() { return synthesis_; }

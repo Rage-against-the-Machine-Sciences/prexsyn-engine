@@ -23,22 +23,40 @@ namespace prexsyn::chemspace {
 void ChemicalSpaceSynthesis::serialize(std::ostream &os) const {
     boost::archive::binary_oarchive oa(os);
     oa << postfix_notation_;
+    oa << max_outcomes_history_;
 }
 
 std::unique_ptr<ChemicalSpaceSynthesis>
-ChemicalSpaceSynthesis::deserialize(std::istream &is, const ChemicalSpace &cs,
-                                    std::optional<size_t> max_outcomes) {
-    std::unique_ptr<ChemicalSpaceSynthesis> result{new ChemicalSpaceSynthesis(cs)};
+ChemicalSpaceSynthesis::deserialize(std::istream &is, const ChemicalSpace &cs) {
+    std::unique_ptr<ChemicalSpaceSynthesis> instance{new ChemicalSpaceSynthesis(cs)};
     boost::archive::binary_iarchive ia(is);
-    PostfixNotation pn;
-    ia >> pn;
-    auto recons_result = result->add_postfix_notation(pn, max_outcomes);
-    if (!recons_result) {
+    PostfixNotation pfn;
+    std::vector<std::optional<size_t>> max_outcomes_history;
+    ia >> pfn >> max_outcomes_history;
+
+    auto result = Result::ok();
+    for (size_t i = 0; i < pfn.size(); ++i) {
+        const auto &token = pfn.tokens()[i];
+        if (token.type == PostfixNotation::Token::Type::BuildingBlock) {
+            result = instance->add_building_block(token.index);
+            if (!result) {
+                break;
+            }
+        } else if (token.type == PostfixNotation::Token::Type::Reaction) {
+            result = instance->add_reaction(token.index, max_outcomes_history.at(i));
+            if (!result) {
+                break;
+            }
+        }
+    }
+
+    if (!result) {
         throw std::runtime_error(
             "failed to deserialize synthesis, did you provide the same chemical space? " +
-            recons_result.message);
+            result.message);
     }
-    return result;
+
+    return instance;
 }
 
 size_t ChemicalSpaceSynthesis::count_building_blocks() const {
@@ -82,6 +100,7 @@ Result ChemicalSpaceSynthesis::add_building_block(BuildingBlockLibrary::Index in
         const auto &bb_item = cs_.bb_lib().get(index);
         synthesis_->push(bb_item.molecule);
         postfix_notation_.append(bb_item.index, PostfixNotation::Token::Type::BuildingBlock);
+        max_outcomes_history_.emplace_back(std::nullopt);
         return Result::ok();
     } catch (const std::exception &e) {
         return Result::error(e.what());
@@ -93,6 +112,7 @@ Result ChemicalSpaceSynthesis::add_building_block(const std::string &index) noex
         const auto &bb_item = cs_.bb_lib().get(index);
         synthesis_->push(bb_item.molecule);
         postfix_notation_.append(bb_item.index, PostfixNotation::Token::Type::BuildingBlock);
+        max_outcomes_history_.emplace_back(std::nullopt);
         return Result::ok();
     } catch (const std::exception &e) {
         return Result::error(e.what());
@@ -105,6 +125,7 @@ Result ChemicalSpaceSynthesis::add_reaction(ReactionLibrary::Index index,
         const auto &rxn_item = cs_.rxn_lib().get(index);
         synthesis_->push(rxn_item.reaction, max_outcomes);
         postfix_notation_.append(rxn_item.index, PostfixNotation::Token::Type::Reaction);
+        max_outcomes_history_.emplace_back(max_outcomes);
         return Result::ok();
     } catch (const std::exception &e) {
         return Result::error(e.what());
@@ -117,6 +138,7 @@ Result ChemicalSpaceSynthesis::add_reaction(const std::string &index,
         const auto &rxn_item = cs_.rxn_lib().get(index);
         synthesis_->push(rxn_item.reaction, max_outcomes);
         postfix_notation_.append(rxn_item.index, PostfixNotation::Token::Type::Reaction);
+        max_outcomes_history_.emplace_back(max_outcomes);
         return Result::ok();
     } catch (const std::exception &e) {
         return Result::error(e.what());
@@ -175,6 +197,7 @@ Result ChemicalSpaceSynthesis::add_intermediate(const std::string &identifier,
 
 Result ChemicalSpaceSynthesis::undo() noexcept {
     try {
+        max_outcomes_history_.pop_back();
         postfix_notation_.pop_back();
         synthesis_->undo();
         return Result::ok();
