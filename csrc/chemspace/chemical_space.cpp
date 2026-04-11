@@ -34,7 +34,7 @@ void ReactantLists::init(const ReactionLibrary &rxn_lib) {
     }
 }
 
-void ReactantLists::set(MolIndex bb, ReactionLibrary::Index rxn, Reaction::ReactantIndex rnt) {
+void ReactantLists::add(MolIndex bb, ReactionLibrary::Index rxn, Reaction::ReactantIndex rnt) {
     if (rxn >= r2b_.size()) {
         throw std::out_of_range("Reaction index out of range. Did you forget to call init?");
     }
@@ -43,6 +43,19 @@ void ReactantLists::set(MolIndex bb, ReactionLibrary::Index rxn, Reaction::React
     }
     r2b_[rxn][rnt].push_back(bb);
     num_matches_++;
+}
+
+void ReactantLists::set(ReactionLibrary::Index rxn, Reaction::ReactantIndex rnt,
+                        const std::vector<MolIndex> &bbs) {
+    if (rxn >= r2b_.size()) {
+        throw std::out_of_range("Reaction index out of range. Did you forget to call init?");
+    }
+    if (rnt >= r2b_[rxn].size()) {
+        throw std::out_of_range("Reactant index out of range. Did you forget to call init?");
+    }
+    num_matches_ -= r2b_[rxn][rnt].size();
+    r2b_[rxn][rnt] = bbs;
+    num_matches_ += r2b_[rxn][rnt].size();
 }
 
 std::unique_ptr<ChemicalSpace> ChemicalSpace::deserialize(std::istream &is) {
@@ -196,7 +209,7 @@ void ChemicalSpace::build_reactant_lists_for_building_blocks() {
                 if (!reactant_matching_config_.check(match)) {
                     continue;
                 }
-                rnt_bb_mapping_.set(bb.index, match.reaction_index, match.reactant_index);
+                rnt_bb_mapping_.add(bb.index, match.reaction_index, match.reactant_index);
             }
 
             count_processed++;
@@ -225,7 +238,7 @@ void ChemicalSpace::build_reactant_lists_for_intermediates() {
                     continue;
                 }
 
-                rnt_int_mapping_.set(intm.index, match.reaction_index, match.reactant_index);
+                rnt_int_mapping_.add(intm.index, match.reaction_index, match.reactant_index);
             }
 
             count_processed++;

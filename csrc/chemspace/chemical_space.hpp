@@ -52,7 +52,8 @@ public:
     size_t num_matches() const { return num_matches_; }
 
     void init(const ReactionLibrary &);
-    void set(MolIndex, ReactionLibrary::Index, Reaction::ReactantIndex);
+    void add(MolIndex, ReactionLibrary::Index, Reaction::ReactantIndex);
+    void set(ReactionLibrary::Index, Reaction::ReactantIndex, const std::vector<MolIndex> &);
 };
 
 class ChemicalSpace {
@@ -96,13 +97,24 @@ public:
     void serialize(std::ostream &) const;
 
     const BuildingBlockLibrary &bb_lib() const { return *bb_lib_; }
+    BuildingBlockLibrary &bb_lib() { return *bb_lib_; }
+
     const ReactionLibrary &rxn_lib() const { return *rxn_lib_; }
+    ReactionLibrary &rxn_lib() { return *rxn_lib_; }
+
     const IntermediateLibrary &int_lib() const { return *int_lib_; }
+    IntermediateLibrary &int_lib() { return *int_lib_; }
+
     const ReactantMatchingConfig &reactant_matching_config() const {
         return reactant_matching_config_;
     }
+    ReactantMatchingConfig &reactant_matching_config() { return reactant_matching_config_; }
+
     const ReactantLists &building_block_reactant_lists() const { return rnt_bb_mapping_; }
+    ReactantLists &building_block_reactant_lists() { return rnt_bb_mapping_; }
+
     const ReactantLists &intermediate_reactant_lists() const { return rnt_int_mapping_; }
+    ReactantLists &intermediate_reactant_lists() { return rnt_int_mapping_; }
 
     void generate_intermediates();
 
