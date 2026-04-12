@@ -226,6 +226,8 @@ static void def_chemical_space(py::module &m) {
         .def(py::init<>())
         .def("get", &ReactantLists::get, py::arg("reaction_index"), py::arg("reactant_index"),
              py::return_value_policy::reference_internal)
+        .def("set", &ReactantLists::set, py::arg("reaction_index"), py::arg("reactant_index"),
+             py::arg("building_block_indices"))
         .def("num_matches", &ReactantLists::num_matches);
 
     py::class_<ChemicalSpace::PeekStats>(m, "ChemicalSpacePeekStats")
@@ -256,14 +258,25 @@ static void def_chemical_space(py::module &m) {
                         }
                         return ChemicalSpace::peek(ifs);
                     })
-        .def("bb_lib", &ChemicalSpace::bb_lib, py::return_value_policy::reference_internal)
-        .def("rxn_lib", &ChemicalSpace::rxn_lib, py::return_value_policy::reference_internal)
-        .def("int_lib", &ChemicalSpace::int_lib, py::return_value_policy::reference_internal)
-        .def("reactant_matching_config", &ChemicalSpace::reactant_matching_config,
+        .def("bb_lib",
+             static_cast<BuildingBlockLibrary &(ChemicalSpace::*)()>(&ChemicalSpace::bb_lib),
              py::return_value_policy::reference_internal)
-        .def("building_block_reactant_lists", &ChemicalSpace::building_block_reactant_lists,
+        .def("rxn_lib", static_cast<ReactionLibrary &(ChemicalSpace::*)()>(&ChemicalSpace::rxn_lib),
              py::return_value_policy::reference_internal)
-        .def("intermediate_reactant_lists", &ChemicalSpace::intermediate_reactant_lists,
+        .def("int_lib",
+             static_cast<IntermediateLibrary &(ChemicalSpace::*)()>(&ChemicalSpace::int_lib),
+             py::return_value_policy::reference_internal)
+        .def("reactant_matching_config",
+             static_cast<ReactantMatchingConfig &(ChemicalSpace::*)()>(
+                 &ChemicalSpace::reactant_matching_config),
+             py::return_value_policy::reference_internal)
+        .def("building_block_reactant_lists",
+             static_cast<ReactantLists &(ChemicalSpace::*)()>(
+                 &ChemicalSpace::building_block_reactant_lists),
+             py::return_value_policy::reference_internal)
+        .def("intermediate_reactant_lists",
+             static_cast<ReactantLists &(ChemicalSpace::*)()>(
+                 &ChemicalSpace::intermediate_reactant_lists),
              py::return_value_policy::reference_internal)
         .def("generate_intermediates", &ChemicalSpace::generate_intermediates)
         .def("build_reactant_lists_for_building_blocks",
