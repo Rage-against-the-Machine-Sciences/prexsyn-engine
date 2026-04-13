@@ -32,8 +32,10 @@ static std::string shape_to_string(const std::vector<size_t> &shape) {
 DataPipeline::DataPipeline(const std::shared_ptr<ChemicalSpace> &cs,
                            const std::map<std::string, std::shared_ptr<MoleculeDescriptor>> &md,
                            const std::map<std::string, std::shared_ptr<SynthesisDescriptor>> &sd,
+                           std::vector<double> bb_weights, double smoothing_alpha,
                            const enumerator::EnumeratorConfig &enumerator_config)
-    : chemical_space_(cs), enumerator_config_(enumerator_config),
+    : chemical_space_(cs), bb_weights_(std::move(bb_weights)), smoothing_alpha_(smoothing_alpha),
+      enumerator_config_(enumerator_config),
       logger_(create_logger("DataPipeline" + std::to_string(global_pipeline_id_++))) {
 
     for (const auto &[name, descriptor] : md) {
@@ -106,7 +108,8 @@ DataPipeline::Batch DataPipeline::get(size_t batch_size) {
 
 Worker::Worker(const DataPipeline &owner, size_t seed)
     : owner_(owner), seed_(seed),
-      enumerator_(owner_.chemical_space_, owner_.enumerator_config_, seed),
+      enumerator_(owner_.chemical_space_, owner_.bb_weights_, owner_.smoothing_alpha_,
+                  owner_.enumerator_config_, seed),
       thread_(&Worker::run, this) {
     owner_.logger_->info("Worker[seed={}] started", seed);
 }

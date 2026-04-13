@@ -120,22 +120,22 @@ def decode_pathway(
 
     product_smiles = stack[0]
 
-    pathway_flat_bu = ";".join(flat_tokens)
-    pathway_flat_td = ";".join(reversed(flat_tokens))
-    synthesis_indices = ";".join(raw_triplets)
+    # pathway_flat_bu = ";".join(flat_tokens)
+    # pathway_flat_td = ";".join(reversed(flat_tokens))
+    # synthesis_indices = ";".join(raw_triplets)
 
-    json_string = build_synllama_json(rxn_steps)
+    # json_string = build_synllama_json(rxn_steps)
 
     return {
         "sample_id": sample_id,
         "product_smiles": product_smiles,
         "bb_smiles": bb_smiles,
         "rxn_indices": rxn_indices,
-        "rxn_int_smiles": rxn_int_smiles,
-        "pathway_flat_bu": pathway_flat_bu,
-        "pathway_flat_td": pathway_flat_td,
-        "json_string": json_string,
-        "synthesis_indices": synthesis_indices,
+        # "rxn_int_smiles": rxn_int_smiles,
+        # "pathway_flat_bu": pathway_flat_bu,
+        # "pathway_flat_td": pathway_flat_td,
+        # "json_string": json_string,
+        # "synthesis_indices": synthesis_indices,
     }
 
 

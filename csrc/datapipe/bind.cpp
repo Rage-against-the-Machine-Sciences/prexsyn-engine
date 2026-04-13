@@ -48,9 +48,11 @@ void def_module_datapipe(pybind11::module &m) {
                  const std::shared_ptr<chemspace::ChemicalSpace> &,
                  const std::map<std::string, std::shared_ptr<descriptor::MoleculeDescriptor>> &,
                  const std::map<std::string, std::shared_ptr<descriptor::SynthesisDescriptor>> &,
+                 std::vector<double>, double,
                  const enumerator::EnumeratorConfig &>(),
              py::arg("chemical_space"), py::arg("molecule_descriptors"),
              py::arg("synthesis_descriptors"),
+             py::arg("bb_weights") = std::vector<double>{}, py::arg("smoothing_alpha") = 1.0,
              py::arg("enumerator_config") = enumerator::kDefaultEnumeratorConfig)
         .def("start_workers", &DataPipeline::start_workers)
         .def("stop_workers", &DataPipeline::stop_workers)

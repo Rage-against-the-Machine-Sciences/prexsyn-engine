@@ -31,7 +31,13 @@ BATCH_SIZE = 1024
     default="./results/samples/",
     help="Path to store samples in batches",
 )
-def main(cs_path, num_samples, out_dir):
+@click.option(
+    "--bb-weights",
+    type=str,
+    default=None,
+    help="Path to bb_dist .npy weights file (optional, defaults to uniform)",
+)
+def main(cs_path, num_samples, out_dir, bb_weights):
     cs_path = Path(cs_path)
     if not cs_path.exists():
         print(f"Chemical space cache file not found at {cs_path}")
@@ -47,6 +53,15 @@ def main(cs_path, num_samples, out_dir):
     print("- Number of reactions:", len(chemspace.rxn_lib()))
     print("- Number of intermediates:", len(chemspace.int_lib()))
 
+    weights = []
+    if bb_weights is not None:
+        import numpy as np
+
+        weights = np.load(bb_weights).tolist()
+        print(
+            f"Loaded BB weights from {bb_weights}, non-zero: {sum(1 for w in weights if w > 0)}"
+        )
+
     datapipe_line = prexsyn_engine.datapipe.DataPipeline(
         chemspace,
         {
@@ -54,6 +69,8 @@ def main(cs_path, num_samples, out_dir):
             "fcfp4": prexsyn_engine.descriptor.MorganFingerprint.fcfp4(),
         },
         {"synthesis": prexsyn_engine.descriptor.SynthesisPostfixNotation.create(16)},
+        bb_weights=weights,  # empty list -> uniform
+        smoothing_alpha=1.0,
     )
 
     num_batches = int(np.ceil(num_samples / BATCH_SIZE))

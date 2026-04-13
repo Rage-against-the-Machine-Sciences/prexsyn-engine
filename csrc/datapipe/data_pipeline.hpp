@@ -30,6 +30,10 @@ private:
     std::shared_ptr<ChemicalSpace> chemical_space_;
     enumerator::EnumeratorConfig enumerator_config_;
 
+    // for guided enumerator
+    std::vector<double> bb_weights_;
+    double smoothing_alpha_;
+
     std::map<std::string, std::shared_ptr<const MoleculeDescriptor>> molecule_descriptors_;
     std::map<std::string, std::shared_ptr<const SynthesisDescriptor>> synthesis_descriptors_;
     std::unique_ptr<DataBuffer<8192>> buffer_;
@@ -43,6 +47,7 @@ public:
     DataPipeline(const std::shared_ptr<ChemicalSpace> &,
                  const std::map<std::string, std::shared_ptr<MoleculeDescriptor>> &,
                  const std::map<std::string, std::shared_ptr<SynthesisDescriptor>> &,
+                 std::vector<double> bb_weights = {}, double smoothing_alpha = 1.0,
                  const enumerator::EnumeratorConfig & = enumerator::kDefaultEnumeratorConfig);
 
     const auto &buffer() const { return *buffer_; }
@@ -80,7 +85,7 @@ private:
 
     const DataPipeline &owner_;
     const size_t seed_;
-    enumerator::RandomEnumerator enumerator_;
+    enumerator::GuidedEnumerator enumerator_;
     std::jthread thread_;
 
     Worker(const DataPipeline &owner, size_t seed);
