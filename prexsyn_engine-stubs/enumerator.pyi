@@ -10,6 +10,31 @@ class EnumeratorConfig:
     def __init__(self) -> None: ...
 
 class RandomEnumerator:
-    def __init__(self, chemical_space: prexsyn_engine.chemspace.ChemicalSpace, config: EnumeratorConfig = ..., random_seed: typing.SupportsInt | typing.SupportsIndex | None = ...) -> None: ...
+    def __init__(
+        self,
+        chemical_space: prexsyn_engine.chemspace.ChemicalSpace,
+        config: EnumeratorConfig = ...,
+        random_seed: typing.SupportsInt | typing.SupportsIndex | None = ...,
+    ) -> None: ...
     def next(self) -> prexsyn_engine.chemspace.Synthesis: ...
-    def next_with_product(self) -> tuple[prexsyn_engine.chemspace.Synthesis, prexsyn_engine.chemistry.Molecule]: ...
+    def next_with_product(
+        self,
+    ) -> tuple[
+        prexsyn_engine.chemspace.Synthesis, prexsyn_engine.chemistry.Molecule
+    ]: ...
+
+class GuidedEnumerator:
+    def __init__(
+        self,
+        chemical_space: prexsyn_engine.chemspace.ChemicalSpace,
+        bb_weights: list[float],
+        smoothing_alpha: float,
+        config: EnumeratorConfig = ...,
+        random_seed: typing.SupportsInt | typing.SupportsIndex | None = ...,
+    ) -> None: ...
+    def next(self) -> prexsyn_engine.chemspace.Synthesis: ...
+    def next_with_product(
+        self,
+    ) -> tuple[
+        prexsyn_engine.chemspace.Synthesis, prexsyn_engine.chemistry.Molecule
+    ]: ...

@@ -12,6 +12,7 @@
 
 #include "../chemspace/chemspace.hpp"
 #include "enumerator.hpp"
+#include "guided.hpp"
 
 namespace py = pybind11;
 using namespace prexsyn;
@@ -32,4 +33,12 @@ void def_module_enumerator(pybind11::module &m) {
              py::arg("random_seed") = std::nullopt)
         .def("next", &RandomEnumerator::next)
         .def("next_with_product", &RandomEnumerator::next_with_product);
+
+    py::class_<GuidedEnumerator, py::smart_holder>(m, "GuidedEnumerator")
+        .def(py::init<std::shared_ptr<chemspace::ChemicalSpace>, std::vector<double>, double,
+                      const GuidedEnumerator::Config &, std::optional<size_t>>(),
+             py::arg("chemical_space"), py::arg("bb_weights"), py::arg("smoothing_alpha") = 1.0,
+             py::arg("config") = kDefaultEnumeratorConfig, py::arg("random_seed") = std::nullopt)
+        .def("next", &GuidedEnumerator::next)
+        .def("next_with_product", &GuidedEnumerator::next_with_product);
 }
