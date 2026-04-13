@@ -115,7 +115,7 @@ def build_bb_distribution(
     smiles_to_idx = {}
     for i in range(n):
         item = bb_lib[i]
-        smi = canonical(item.molecule.smiles)
+        smi = canonical(item.molecule.smiles())
         if smi:
             smiles_to_idx[smi] = i
 
