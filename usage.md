@@ -59,5 +59,8 @@ print('Reactions:', len(cs.rxn_lib()))
 print('Intermediates:', len(cs.int_lib()))
 "
 ```
-7. To verify, run datapipe_dryrun script to verify in inspect mode: `python -m scripts.datapipe_dryrun --inspect --cd-path ./data/enamine_rxn115_chemspace.bin`
+7. To verify, run datapipe_dryrun script to verify in inspect mode: `python -m scripts.datapipe_dryrun --inspect --cs-path ./data/enamine_rxn115_chemspace.bin`
 8. Run modified data generation script for our requirements.
+
+
+If you're modifying the engine, after rebuilding, you need to regenerate the chemical space object, and so run steps 1-7 every time you do that.

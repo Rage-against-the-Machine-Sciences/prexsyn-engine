@@ -124,7 +124,7 @@ def decode_pathway(
     # pathway_flat_td = ";".join(reversed(flat_tokens))
     # synthesis_indices = ";".join(raw_triplets)
 
-    # json_string = build_synllama_json(rxn_steps)
+    json_string = build_synllama_json(rxn_steps)
 
     return {
         "sample_id": sample_id,
@@ -134,7 +134,7 @@ def decode_pathway(
         # "rxn_int_smiles": rxn_int_smiles,
         # "pathway_flat_bu": pathway_flat_bu,
         # "pathway_flat_td": pathway_flat_td,
-        # "json_string": json_string,
+        "json_string": json_string,
         # "synthesis_indices": synthesis_indices,
     }
 
