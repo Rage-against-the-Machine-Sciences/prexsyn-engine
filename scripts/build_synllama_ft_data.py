@@ -1,167 +1,116 @@
-from pathlib import Path
-import json
 import argparse
-from collections import defaultdict
-from tqdm import tqdm
+import json
+import random
 
-from rdkit import Chem
-from rdkit.Chem import DataStructs
-from rdkit.Chem.rdFingerprintGenerator import GetMorganGenerator
-
-morgan_gen = GetMorganGenerator(radius=2, fpSize=2048)
-
-
-def canonicalize_smiles(smi: str) -> str | None:
-    mol = Chem.MolFromSmiles(smi)
-    if mol is None:
-        return None
-    return Chem.MolToSmiles(mol, canonical=True)
+SYNLLAMA_TEMPLATE = {
+    "instruction": "You are an expert synthetic organic chemist. Your task is to design a synthesis pathway for a given target molecule using common and reliable reaction templates and building blocks. Follow these instructions:\n\n1. **Input the SMILES String:** Read in the SMILES string of the target molecule and identify common reaction templates that can be applied.\n\n2. **Decompose the Target Molecule:** Use the identified reaction templates to decompose the target molecule into different intermediates.\n\n3. **Check for Building Blocks:** For each intermediate:\n   - Identify if it is a building block. If it is, wrap it in <bb> and </bb> tags and save it for later use.\n   - If it is not a building block, apply additional reaction templates to further decompose it into building blocks.\n\n4. **Document Reactions:** For each reaction documented in the output, wrap the reaction template in <rxn> and </rxn> tags.\n\n5. **Repeat the Process:** Continue this process until all intermediates are decomposed into building blocks, and document each step clearly in a structured JSON format.",
+    "input": "Provide a synthetic pathway for this SMILES string: SMILES_STRING",
+    "output": '{"reactions": [REACTIONS], "building_blocks": [BUILDING_BLOCKS]}',
+}
 
 
-def smiles_to_fp(smi: str):
-    mol = Chem.MolFromSmiles(smi)
-    if mol is None:
-        return None
-    return morgan_gen.GetFingerprint(mol)
+def load_dataset(path):
+    with open(path, "r") as f:
+        obj = json.load(f)
+    return obj["data"] if "data" in obj else obj
 
 
-def load_product_groups(jsonl_path: Path, n: int, max_paths_per_product: int):
-    groups = defaultdict(list)
+def collect_candidates(target, info):
+    candidates = []
 
-    with jsonl_path.open() as f:
-        for line in tqdm(f, desc="loading + grouping", unit="lines"):
-            line = line.strip()
-            if not line:
-                continue
+    # target
+    for p in info.get("pathways", []):
+        candidates.append((target, p))
 
-            try:
-                rec = json.loads(line)
-            except json.JSONDecodeError:
-                continue
+    # analogs
+    for a in info.get("analogs", []):
+        smi = a["analog_smiles"]
+        for p in a.get("pathways", []):
+            candidates.append((smi, p))
 
-            smi = canonicalize_smiles(rec.get("product_smiles", ""))
-            if smi is None:
-                continue
-
-            pathway = rec.get("json_string")
-            if not isinstance(pathway, str):
-                continue
-            assert pathway.strip().startswith("{")
-
-            if pathway is None:
-                continue
-
-            # cap pathways per product
-            if len(groups[smi]) < max_paths_per_product:
-                groups[smi].append(pathway)
-
-            # stop once we have enough unique products
-            if len(groups) >= n:
-                break
-
-    return groups
+    return candidates
 
 
-def build_analog_groups(groups, threshold: float, min_analogs: int):
-    smiles = list(groups.keys())
-    fps = [smiles_to_fp(s) for s in smiles]
+def build_input(base_input, prev_smiles):
+    if not prev_smiles:
+        return base_input
 
-    neighbors = {s: set() for s in smiles}
+    prev_str = ", ".join(prev_smiles)
+    return (
+        base_input
+        + f"\nPreviously generated pathways target these molecules: {prev_str}. "
+        + "Generate a pathway targeting a DIFFERENT, structurally distinct analog."
+    )
 
-    for i, fp_i in enumerate(tqdm(fps, desc="building analog graph", unit="mol")):
-        if fp_i is None:
-            continue
 
-        sims = DataStructs.BulkTanimotoSimilarity(fp_i, fps[i + 1 :])
-        for offset, sim in enumerate(sims, start=1):
-            if sim >= threshold:
-                j = i + offset
-                si = smiles[i]
-                sj = smiles[j]
-                neighbors[si].add(sj)
-                neighbors[sj].add(si)
+def sample_subset(rng, pool):
+    if not pool:
+        return []
+    k = rng.randint(0, len(pool))
+    return rng.sample(pool, k) if k > 0 else []
 
-    # debug stats
-    degrees = [len(v) for v in neighbors.values()]
-    print("max degree:", max(degrees))
-    print("num nodes with >=1:", sum(d >= 1 for d in degrees))
-    print("num nodes with >=2:", sum(d >= 2 for d in degrees))
-    print("num nodes with >=3:", sum(d >= 3 for d in degrees))
 
-    dataset = {}
-    for smi in smiles:
-        analogs = sorted(neighbors[smi])
-        if len(analogs) < min_analogs:
-            continue
+def make_examples(rng, target, info, M=None):
+    candidates = collect_candidates(target, info)
+    if not candidates:
+        return []
+    if M is None:
+        M = len(candidates)
 
-        dataset[smi] = {
-            # multiple pathways
-            "pathways": groups[smi],
-            "analogs": [
-                {
-                    "analog_smiles": a,
-                    "pathways": groups[a],
-                }
-                for a in analogs
-            ],
+    examples = []
+
+    # full reconstruction sample
+    recon = [c for c in candidates if c[0] == target]
+    chosen = rng.choice(recon if recon else candidates)
+    base_input = SYNLLAMA_TEMPLATE["input"].replace("SMILES_STRING", target)
+
+    examples.append(
+        {
+            "instruction": SYNLLAMA_TEMPLATE["instruction"],
+            "input": base_input,
+            "output": chosen[1],
         }
+    )
 
-    return dataset, neighbors
+    # analog hints
+    for _ in range(M - 1):
+        out_smi, out_path = rng.choice(candidates)
+        prev_pool = [s for s, _ in candidates if s != out_smi]
+        prev = sample_subset(rng, prev_pool)
+        inp = build_input(base_input, prev)
 
+        examples.append(
+            {
+                "instruction": SYNLLAMA_TEMPLATE["instruction"],
+                "input": inp,
+                "output": out_path,
+            }
+        )
 
-def parse_args():
-    p = argparse.ArgumentParser()
-    p.add_argument("--input", required=True)
-    p.add_argument("--output", required=True)
-    p.add_argument("--n", type=int, required=True)
-    p.add_argument("--threshold", type=float, default=0.8)
-    p.add_argument("--min-analogs", type=int, default=3)
-    p.add_argument("--max-paths-per-product", type=int, default=3)
-    return p.parse_args()
+    return examples
 
 
 def main():
-    args = parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--input_json", required=True)
+    parser.add_argument("--output_jsonl", required=True)
+    parser.add_argument("--samples_per_target", type=int, default=None)
+    parser.add_argument("--seed", type=int, default=42)
+    args = parser.parse_args()
 
-    in_path = Path(args.input)
-    out_path = Path(args.output)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
+    rng = random.Random(args.seed)
+    data = load_dataset(args.input_json)
 
-    groups = load_product_groups(
-        in_path,
-        args.n,
-        args.max_paths_per_product,
-    )
-
-    if not groups:
-        raise SystemExit("No valid data.")
-
-    dataset, neighbors = build_analog_groups(
-        groups,
-        args.threshold,
-        args.min_analogs,
-    )
-
-    payload = {
-        "meta": {
-            "input": str(in_path),
-            "n_products": len(groups),
-            "threshold": args.threshold,
-            "min_analogs": args.min_analogs,
-            "max_paths_per_product": args.max_paths_per_product,
-            "n_targets_kept": len(dataset),
-        },
-        "data": dataset,
-    }
-
-    with out_path.open("w") as f:
-        json.dump(payload, f, indent=2)
-
-    n_edges = sum(len(v) for v in neighbors.values()) // 2
-    print(f"unique products        : {len(groups)}")
-    print(f"analog pairs           : {n_edges}")
-    print(f"targets kept           : {len(dataset)}")
-    print(f"written                : {out_path}")
+    with open(args.output_jsonl, "w") as out:
+        for target, info in data.items():
+            examples = make_examples(
+                rng,
+                target,
+                info,
+                M=args.samples_per_target,
+            )
+            for ex in examples:
+                out.write(json.dumps(ex) + "\n")
 
 
 if __name__ == "__main__":
