@@ -46,7 +46,7 @@ def build_input(base_input, prev_smiles):
 def sample_subset(rng, pool):
     if not pool:
         return []
-    k = rng.randint(0, len(pool))
+    k = rng.randint(1, len(pool))
     return rng.sample(pool, k) if k > 0 else []
 
 
@@ -73,9 +73,14 @@ def make_examples(rng, target, info, M=None):
     )
 
     # analog hints
-    for _ in range(M - 1):
+    while len(examples) < M:
         out_smi, out_path = rng.choice(candidates)
-        prev_pool = [s for s, _ in candidates if s != out_smi]
+        prev_pool = [s for s, _ in candidates if s != out_smi and s != target]
+
+        # skip this sample if no analog hints
+        if not prev_pool:
+            continue
+
         prev = sample_subset(rng, prev_pool)
         inp = build_input(base_input, prev)
 
@@ -101,16 +106,17 @@ def main():
     rng = random.Random(args.seed)
     data = load_dataset(args.input_json)
 
+    # for mild dedup
+    seen = set()
     with open(args.output_jsonl, "w") as out:
         for target, info in data.items():
-            examples = make_examples(
-                rng,
-                target,
-                info,
-                M=args.samples_per_target,
-            )
+            examples = make_examples(rng, target, info, M=args.samples_per_target)
             for ex in examples:
-                out.write(json.dumps(ex) + "\n")
+                line = json.dumps(ex)
+                if line in seen:
+                    continue
+                seen.add(line)
+                out.write(line + "\n")
 
 
 if __name__ == "__main__":
